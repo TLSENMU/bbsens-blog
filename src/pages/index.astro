@@ -2,6 +2,7 @@
 import { getCollection } from 'astro:content';
 import BaseLayout from '../layouts/BaseLayout.astro';
 import PostMeta from '../components/PostMeta.astro';
+import { siteConfig } from '../config';
 import { categoryMap, estimateReadingTime, getPostUrl, sortPosts } from '../lib/posts';
 import { getSeasonUrl, sortSeasons } from '../lib/seasons';
 
@@ -40,14 +41,14 @@ const quietImages = [
 	<section class="home-preview-shell" aria-labelledby="home-title">
 		<div class="home-hero-stacked">
 			<figure>
-				<img src="/assets/covers/home-hero.webp" alt="窗边桌面上的地图、茶、纸页与小物" loading="eager" width="1600" height="900" />
+				<img src="/assets/covers/home-hero-fuji.webp" alt="冬季本栖湖对岸的富士山、湖面与星轨" loading="eager" width="1600" height="900" />
 			</figure>
 			<div class="home-hero-copy">
 				<div>
 					<p class="page-kicker">Road / Table / People</p>
 					<h1 id="home-title">写路上、餐桌，以及念念不忘的物与人。</h1>
 				</div>
-				<p>一些关于行路、日常、四时与人的记录。</p>
+				<p>{siteConfig.siteDescription}</p>
 			</div>
 		</div>
 
@@ -73,12 +74,15 @@ const quietImages = [
 			</section>
 		)}
 
-		<section class="curated-section" aria-labelledby="curated-title">
-			<div class="section-heading">
-				<p class="page-kicker">Selected This Season</p>
-				<h2 id="curated-title">当季精选</h2>
-			</div>
-			<div class="curated-list">
+		<details class="curated-section curated-section--folded">
+			<summary aria-controls="curated-list">
+				<div class="section-heading">
+					<p class="page-kicker">Selected This Season</p>
+					<h2 id="curated-title">当季精选</h2>
+				</div>
+				<span aria-hidden="true">展开</span>
+			</summary>
+			<div id="curated-list" class="curated-list" aria-labelledby="curated-title">
 				{seasonalPicks.map((post) => (
 					<article data-category={post.data.category}>
 						<PostMeta post={post} readingTime={estimateReadingTime(post.body)} />
@@ -87,7 +91,7 @@ const quietImages = [
 					</article>
 				))}
 			</div>
-		</section>
+		</details>
 
 		<section class="recent-section" aria-labelledby="recent-title">
 			<div class="section-heading">
