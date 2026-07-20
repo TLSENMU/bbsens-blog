@@ -1,0 +1,37 @@
+---
+import { getCollection } from 'astro:content';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { formatDate, getPostUrl, sortPosts } from '../../lib/posts';
+
+const posts = sortPosts(await getCollection('blog', ({ data }) => !data.draft));
+const groups = posts.reduce<Record<string, typeof posts>>((acc, post) => {
+	const year = String(post.data.publishDate.getFullYear());
+	acc[year] = acc[year] ?? [];
+	acc[year].push(post);
+	return acc;
+}, {});
+---
+
+<BaseLayout title="归档" description="按年份浏览博客文章。">
+	<section class="page-shell" aria-labelledby="archive-title">
+		<p class="page-kicker">Archive</p>
+		<h1 id="archive-title" class="page-title">归档</h1>
+		<div class="archive-list">
+			{Object.entries(groups).map(([year, yearPosts]) => (
+				<section aria-labelledby={`year-${year}`}>
+					<h2 id={`year-${year}`} class="archive-year">{year}</h2>
+					<ul>
+						{yearPosts.map((post) => (
+							<li>
+								<a href={getPostUrl(post)}>
+									<time datetime={post.data.publishDate.toISOString()}>{formatDate(post.data.publishDate)}</time>
+									<span>{post.data.title}</span>
+								</a>
+							</li>
+						))}
+					</ul>
+				</section>
+			))}
+		</div>
+	</section>
+</BaseLayout>

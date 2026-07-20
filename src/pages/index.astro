@@ -1,0 +1,121 @@
+---
+import { getCollection } from 'astro:content';
+import BaseLayout from '../layouts/BaseLayout.astro';
+import PostMeta from '../components/PostMeta.astro';
+import { categoryMap, estimateReadingTime, getPostUrl, sortPosts } from '../lib/posts';
+import { getSeasonUrl, sortSeasons } from '../lib/seasons';
+
+const posts = sortPosts(await getCollection('blog', ({ data }) => !data.draft));
+const seasons = sortSeasons(await getCollection('seasons', ({ data }) => !data.draft));
+const latestSeason = seasons[0];
+
+const seasonalPicks = (Object.keys(categoryMap) as Array<keyof typeof categoryMap>)
+	.map((category) => posts.find((post) => post.data.category === category && post.data.featured))
+	.filter(Boolean);
+
+const recentPosts = posts
+	.slice()
+	.sort((a, b) => {
+		const aDate = (a.data.updatedDate ?? a.data.publishDate).getTime();
+		const bDate = (b.data.updatedDate ?? b.data.publishDate).getTime();
+		return bDate - aDate;
+	})
+	.slice(0, 5);
+
+const seasonNotes = [
+	{ label: '思考', text: '留下的不是全部，而是经过时间筛过以后仍然发亮的部分。' },
+	{ label: '生活', text: '几顿慢慢吃完的饭，一间有风的房间，和一次没有主题的见面。' },
+	{ label: '笺言', text: '愿许多小事，不必变得重大，也能被认真看见。' },
+];
+
+const quietImages = [
+	{ src: '/assets/covers/travel.jpg', alt: '占位图：路途上的柔和色块', caption: '路上的光' },
+	{ src: '/assets/covers/daily.jpg', alt: '占位图：餐桌和房间气氛', caption: '一顿慢饭' },
+	{ src: '/assets/covers/essay.jpg', alt: '占位图：傍晚城市与笔记', caption: '见面以后' },
+	{ src: '/assets/covers/notes.jpg', alt: '占位图：房间与纸页气氛', caption: '房间一角' },
+];
+---
+
+<BaseLayout>
+	<section class="home-preview-shell" aria-labelledby="home-title">
+		<div class="preview-hero">
+			<div>
+				<p class="page-kicker">Road / Table / People</p>
+				<h1 id="home-title">写路上、餐桌，以及念念不忘的物与人。</h1>
+			</div>
+			<figure>
+				<img src="/assets/covers/travel.jpg" alt="占位图：柔和路途气氛" loading="eager" width="1600" height="1000" />
+				<figcaption>游记、食记、朋友和喜欢的物件，都慢一点写。</figcaption>
+			</figure>
+		</div>
+
+		{latestSeason && (
+			<section class="season-feature" aria-labelledby="season-feature-title">
+				<div class="season-feature__text">
+					<p class="page-kicker">这一季</p>
+					<h2 id="season-feature-title">{latestSeason.data.year} {latestSeason.data.season}</h2>
+					<p>{latestSeason.data.description}</p>
+					<dl>
+						{seasonNotes.map((item) => (
+							<div>
+								<dt>{item.label}</dt>
+								<dd>{item.text}</dd>
+							</div>
+						))}
+					</dl>
+					<a class="season-link" href={getSeasonUrl(latestSeason)}>读完整季笺</a>
+				</div>
+				{latestSeason.data.cover && (
+					<img src={latestSeason.data.cover} alt={latestSeason.data.coverAlt ?? ''} loading="lazy" width="1600" height="1000" />
+				)}
+			</section>
+		)}
+
+		<section class="curated-section" aria-labelledby="curated-title">
+			<div class="section-heading">
+				<p class="page-kicker">Selected This Season</p>
+				<h2 id="curated-title">当季精选</h2>
+			</div>
+			<div class="curated-list">
+				{seasonalPicks.map((post) => (
+					<article data-category={post.data.category}>
+						<PostMeta post={post} readingTime={estimateReadingTime(post.body)} />
+						<h3><a href={getPostUrl(post)}>{post.data.title}</a></h3>
+						<p>{post.data.description}</p>
+					</article>
+				))}
+			</div>
+		</section>
+
+		<section class="recent-section" aria-labelledby="recent-title">
+			<div class="section-heading">
+				<p class="page-kicker">Recently Updated</p>
+				<h2 id="recent-title">最近更新</h2>
+			</div>
+			<div class="recent-list">
+				{recentPosts.map((post) => (
+					<article data-category={post.data.category}>
+						<PostMeta post={post} readingTime={estimateReadingTime(post.body)} />
+						<h3><a href={getPostUrl(post)}>{post.data.title}</a></h3>
+						<p>{post.data.description}</p>
+					</article>
+				))}
+			</div>
+		</section>
+
+		<section class="quiet-images" aria-labelledby="quiet-images-title">
+			<div class="section-heading">
+				<p class="page-kicker">Selected Images</p>
+				<h2 id="quiet-images-title">拾影</h2>
+			</div>
+			<div class="quiet-image-strip">
+				{quietImages.map((image) => (
+					<figure>
+						<img src={image.src} alt={image.alt} loading="lazy" width="1600" height="1000" />
+						<figcaption>{image.caption}</figcaption>
+					</figure>
+				))}
+			</div>
+		</section>
+	</section>
+</BaseLayout>

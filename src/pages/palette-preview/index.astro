@@ -1,0 +1,375 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+
+const palettes = [
+	{
+		id: 'paper',
+		name: '一｜暖纸白、墨黑、浅陶色',
+		mood: '最安静，像旧书页和手写游记。适合长文、路途和生活感悟。',
+	},
+	{
+		id: 'olive',
+		name: '二｜米白、橄榄灰、深木色',
+		mood: '更有居住感，适合食记、装修、设计、朋友和日常房间。',
+	},
+	{
+		id: 'wine',
+		name: '三｜旧书页白、炭灰、勃艮第红',
+		mood: '更文学杂志，适合写作家、书、关系和稍微浓一点的情绪。',
+	},
+	{
+		id: 'metal',
+		name: '四｜雾灰白、黑褐、暖金属色',
+		mood: '更现代、利落，适合写设计、物件、店铺和审美清单。',
+	},
+	{
+		id: 'morning',
+		name: '五｜晨光纸白、青灰绿、松烟黑、淡杏色',
+		mood: '明快但不鲜艳，安静但不发灰。像清晨的餐桌、干净的窗帘、一杯茶和一页书。',
+	},
+	{
+		id: 'mist-blue',
+		name: '六｜晨雾纸白、雾霭蓝、松烟黑、浅木色',
+		mood: '把雾霭蓝放在灰绿和纸白之间，清透一点，但仍然温和。适合游记、朋友、房间和食物都放在同一个站里。',
+	},
+];
+
+const categoryTones = [
+	{ name: '在路上', tone: '雾霭蓝', className: 'tone-journey' },
+	{ name: '食', tone: '浅陶杏', className: 'tone-food' },
+	{ name: '物与人', tone: '灰橄榄', className: 'tone-people' },
+];
+---
+
+<BaseLayout title="配色预览" description="四套个人博客配色方向预览。">
+	<section class="wide-shell palette-preview" aria-labelledby="palette-title">
+		<p class="page-kicker">Color Preview</p>
+		<h1 id="palette-title" class="page-title">六套配色方向</h1>
+		<p class="page-description">同一组内容，用不同气质来试穿。雾霭蓝适合小面积进入，让页面更明快，但不把生活文字变成冷色调产品页。</p>
+
+		<section class="palette-system" aria-labelledby="system-title">
+			<div>
+				<p class="page-kicker">Recommended System</p>
+				<h2 id="system-title">统一纸色，栏目分色</h2>
+				<p>底色保持晨雾纸白，文章仍然安静；三个栏目用各自的小面积颜色建立记忆点，页面会比单一配色更丰满。</p>
+			</div>
+			<div class="tone-grid">
+				{categoryTones.map((tone) => (
+					<article class={tone.className}>
+						<span>{tone.tone}</span>
+						<h3>{tone.name}</h3>
+						<p>
+							{tone.name === '在路上' && '像远山和清晨空气，适合路途、城市和旅馆。'}
+							{tone.name === '食' && '像陶碗和热汤，适合小店、餐桌和味道。'}
+							{tone.name === '物与人' && '像书脊和房间里的植物，适合作家、物件和朋友。'}
+						</p>
+					</article>
+				))}
+			</div>
+		</section>
+
+		<div class="palette-grid">
+			{palettes.map((palette) => (
+				<article class={`palette-card palette-${palette.id}`}>
+					<div class="palette-swatch" aria-hidden="true">
+						<span></span>
+						<span></span>
+						<span></span>
+						<span></span>
+					</div>
+					<div class="palette-sample">
+						<nav>
+							<strong>私人札记</strong>
+							<div><span>在路上</span><span>食</span><span>物与人</span></div>
+						</nav>
+						<p class="palette-kicker">Road / Table / People</p>
+						<h2>写路上、餐桌，以及念念不忘的物与人。</h2>
+						<p>
+							一次长途车上的停顿，一碗热汤，一盏灯，一个朋友说话前短短的沉默，都可以被慢慢写下来。
+						</p>
+						<div class="palette-entry">
+							<time>JUNE 22, 2026</time>
+							<h3>在公路尽头停一下</h3>
+							<p>风从谷口吹过来，车窗外的山坡像被水洗过。</p>
+						</div>
+					</div>
+					<footer>
+						<h2>{palette.name}</h2>
+						<p>{palette.mood}</p>
+					</footer>
+				</article>
+			))}
+		</div>
+	</section>
+
+	<style>
+		.palette-preview {
+			--sample-radius: 6px;
+		}
+
+		.palette-grid {
+			display: grid;
+			grid-template-columns: repeat(2, minmax(0, 1fr));
+			gap: clamp(1.2rem, 3vw, 2rem);
+		}
+
+		.palette-system {
+			display: grid;
+			grid-template-columns: minmax(0, 0.56fr) minmax(0, 1fr);
+			gap: clamp(1.25rem, 4vw, 2rem);
+			margin-bottom: clamp(1.5rem, 4vw, 2.5rem);
+			padding: clamp(1.25rem, 4vw, 2rem) 0;
+			border-block: 1px solid var(--color-line);
+		}
+
+		.palette-system h2 {
+			margin: 0.3rem 0 0.7rem;
+			font-family: var(--font-serif-cn);
+			font-size: clamp(1.65rem, 4vw, 2.6rem);
+			line-height: 1.15;
+		}
+
+		.palette-system p {
+			margin: 0;
+			color: var(--color-muted);
+			line-height: 1.8;
+		}
+
+		.tone-grid {
+			display: grid;
+			grid-template-columns: repeat(3, minmax(0, 1fr));
+			gap: 1px;
+			background: var(--color-line);
+			border: 1px solid var(--color-line);
+		}
+
+		.tone-grid article {
+			--tone: #8ca6ad;
+			--tone-soft: #edf3f2;
+			display: grid;
+			gap: 0.6rem;
+			min-height: 190px;
+			padding: 1.2rem;
+			background: linear-gradient(180deg, var(--tone-soft), #fffaf2 56%);
+		}
+
+		.tone-grid article::before {
+			content: "";
+			width: 42px;
+			height: 4px;
+			border-radius: 999px;
+			background: var(--tone);
+		}
+
+		.tone-grid .tone-food {
+			--tone: #c58f68;
+			--tone-soft: #f6eadf;
+		}
+
+		.tone-grid .tone-people {
+			--tone: #7d8b69;
+			--tone-soft: #eef1e8;
+		}
+
+		.tone-grid span {
+			color: var(--tone);
+			font-family: var(--font-sans);
+			font-size: 0.78rem;
+		}
+
+		.tone-grid h3 {
+			margin: 0;
+			font-family: var(--font-serif-cn);
+			font-size: 1.55rem;
+			line-height: 1.1;
+		}
+
+		.tone-grid p {
+			margin: 0;
+			color: var(--color-muted);
+			font-family: var(--font-sans);
+			font-size: 0.9rem;
+			line-height: 1.7;
+		}
+
+		.palette-card {
+			--p-bg: #f7f2e9;
+			--p-surface: #fbf7ef;
+			--p-text: #211f1b;
+			--p-muted: #706a60;
+			--p-line: #e1d8ca;
+			--p-accent: #b98d69;
+			overflow: hidden;
+			border: 1px solid var(--color-line);
+			background: var(--p-bg);
+			color: var(--p-text);
+		}
+
+		.palette-olive {
+			--p-bg: #f4efe4;
+			--p-surface: #faf7ef;
+			--p-text: #24251f;
+			--p-muted: #667061;
+			--p-line: #dcd5c4;
+			--p-accent: #5d674e;
+		}
+
+		.palette-wine {
+			--p-bg: #f6f0e6;
+			--p-surface: #fbf7ef;
+			--p-text: #22201d;
+			--p-muted: #6f6761;
+			--p-line: #ded4c6;
+			--p-accent: #7b2636;
+		}
+
+		.palette-metal {
+			--p-bg: #f1f0eb;
+			--p-surface: #fbfaf6;
+			--p-text: #231f1b;
+			--p-muted: #6d6b65;
+			--p-line: #d9d6cc;
+			--p-accent: #9a7b46;
+		}
+
+		.palette-morning {
+			--p-bg: #fbf7ee;
+			--p-surface: #fffaf2;
+			--p-text: #25231f;
+			--p-muted: #68736a;
+			--p-line: #e7ded1;
+			--p-accent: #c58f68;
+		}
+
+		.palette-mist-blue {
+			--p-bg: #f8f5ec;
+			--p-surface: #fffaf2;
+			--p-text: #24231f;
+			--p-muted: #64747a;
+			--p-line: #dfe4df;
+			--p-accent: #8ca6ad;
+		}
+
+		.palette-swatch {
+			display: grid;
+			grid-template-columns: repeat(4, 1fr);
+			height: 12px;
+		}
+
+		.palette-swatch span:nth-child(1) {
+			background: var(--p-bg);
+		}
+
+		.palette-swatch span:nth-child(2) {
+			background: var(--p-text);
+		}
+
+		.palette-swatch span:nth-child(3) {
+			background: var(--p-muted);
+		}
+
+		.palette-swatch span:nth-child(4) {
+			background: var(--p-accent);
+		}
+
+		.palette-sample {
+			padding: clamp(1.15rem, 3vw, 1.65rem);
+			background: var(--p-bg);
+		}
+
+		.palette-sample nav {
+			display: flex;
+			align-items: center;
+			justify-content: space-between;
+			gap: 1rem;
+			padding-bottom: 1rem;
+			border-bottom: 1px solid var(--p-line);
+			color: var(--p-muted);
+			font-family: var(--font-sans);
+			font-size: 0.78rem;
+		}
+
+		.palette-sample nav strong {
+			color: var(--p-text);
+			font-family: var(--font-serif-cn);
+			font-size: 1.35rem;
+		}
+
+		.palette-sample nav div {
+			display: flex;
+			gap: 0.7rem;
+		}
+
+		.palette-kicker,
+		.palette-entry time {
+			color: var(--p-muted);
+			font-family: var(--font-sans);
+			font-size: 0.78rem;
+			letter-spacing: 0.06em;
+			text-transform: uppercase;
+		}
+
+		.palette-sample h2 {
+			max-width: 560px;
+			margin: 0.6rem 0 0.9rem;
+			font-family: var(--font-serif-cn);
+			font-size: clamp(2rem, 5vw, 3.2rem);
+			line-height: 1.12;
+		}
+
+		.palette-sample p {
+			max-width: 560px;
+			margin: 0;
+			color: var(--p-muted);
+			line-height: 1.8;
+		}
+
+		.palette-entry {
+			margin-top: 1.5rem;
+			padding: 1rem;
+			border: 1px solid var(--p-line);
+			border-left: 4px solid var(--p-accent);
+			background: var(--p-surface);
+		}
+
+		.palette-entry h3 {
+			margin: 0.35rem 0;
+			font-family: var(--font-serif-cn);
+			font-size: 1.45rem;
+			line-height: 1.2;
+		}
+
+		.palette-card footer {
+			padding: 1rem clamp(1.15rem, 3vw, 1.65rem) 1.25rem;
+			border-top: 1px solid var(--p-line);
+			background: color-mix(in srgb, var(--p-surface) 80%, var(--p-bg));
+		}
+
+		.palette-card footer h2 {
+			margin: 0 0 0.45rem;
+			font-family: var(--font-serif-cn);
+			font-size: 1.35rem;
+		}
+
+		.palette-card footer p {
+			margin: 0;
+			color: var(--p-muted);
+			font-family: var(--font-sans);
+			font-size: 0.92rem;
+			line-height: 1.65;
+		}
+
+		@media (max-width: 860px) {
+			.palette-grid,
+			.palette-system,
+			.tone-grid {
+				grid-template-columns: 1fr;
+			}
+
+			.palette-sample nav {
+				align-items: flex-start;
+				flex-direction: column;
+			}
+		}
+	</style>
+</BaseLayout>

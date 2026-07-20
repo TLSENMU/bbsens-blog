@@ -1,0 +1,27 @@
+---
+import { getCollection } from 'astro:content';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import PostList from '../../components/PostList.astro';
+import { getAllTags, slugifyTag, sortPosts } from '../../lib/posts';
+
+export async function getStaticPaths() {
+	const posts = sortPosts(await getCollection('blog', ({ data }) => !data.draft));
+	return getAllTags(posts).map(([tag]) => ({
+		params: { tag: slugifyTag(tag) },
+		props: { tag },
+	}));
+}
+
+const { tag } = Astro.props;
+const posts = sortPosts(
+	(await getCollection('blog', ({ data }) => !data.draft)).filter((post) => post.data.tags.includes(tag)),
+);
+---
+
+<BaseLayout title={`标签：${tag}`} description={`浏览标签 ${tag} 下的文章。`}>
+	<section class="page-shell" aria-labelledby="tag-title">
+		<p class="page-kicker">Tag</p>
+		<h1 id="tag-title" class="page-title">#{tag}</h1>
+		<PostList posts={posts} />
+	</section>
+</BaseLayout>

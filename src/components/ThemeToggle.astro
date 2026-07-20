@@ -1,0 +1,14 @@
+<button class="theme-toggle" type="button" aria-label="切换深色模式" title="切换深色模式">
+	<span class="theme-toggle__sun" aria-hidden="true">☼</span>
+	<span class="theme-toggle__moon" aria-hidden="true">◐</span>
+</button>
+
+<script>
+	const toggle = document.querySelector<HTMLButtonElement>('.theme-toggle');
+	toggle?.addEventListener('click', () => {
+		const current = document.documentElement.dataset.theme === 'dark' ? 'dark' : 'light';
+		const next = current === 'dark' ? 'light' : 'dark';
+		document.documentElement.dataset.theme = next;
+		localStorage.setItem('theme', next);
+	});
+</script>

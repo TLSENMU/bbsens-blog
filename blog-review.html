@@ -1,0 +1,448 @@
+<!doctype html>
+<html lang="zh-CN">
+	<head>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		<title>个人博客首页评审稿</title>
+		<style>
+			:root {
+				--font-serif-cn: "Noto Serif SC", "Source Han Serif SC", "Songti SC", "STSong", serif;
+				--font-serif-en: "Source Serif 4", "Literata", Georgia, serif;
+				--font-sans: Inter, "Noto Sans SC", "PingFang SC", system-ui, sans-serif;
+				--paper: #fbf7ee;
+				--paper-soft: #fffaf2;
+				--ink: #24231f;
+				--muted: #68736a;
+				--faint: #a9a296;
+				--line: #e7ded1;
+				--journey: #8ca6ad;
+				--journey-soft: #edf3f2;
+				--food: #c58f68;
+				--food-soft: #f6eadf;
+				--people: #7d8b69;
+				--people-soft: #eef1e8;
+				--width: 1040px;
+				--gutter: clamp(20px, 5vw, 48px);
+			}
+
+			* {
+				box-sizing: border-box;
+			}
+
+			body {
+				margin: 0;
+				background: var(--paper);
+				color: var(--ink);
+				font-family: var(--font-serif-cn);
+				font-size: 18px;
+				line-height: 1.8;
+			}
+
+			a {
+				color: inherit;
+				text-decoration-color: color-mix(in srgb, currentColor 35%, transparent);
+				text-underline-offset: 0.22em;
+			}
+
+			.site-header {
+				border-bottom: 1px solid var(--line);
+				background: color-mix(in srgb, var(--paper) 94%, transparent);
+			}
+
+			.site-header__inner,
+			main,
+			.site-footer {
+				width: min(100% - var(--gutter) * 2, var(--width));
+				margin-inline: auto;
+			}
+
+			.site-header__inner {
+				display: flex;
+				align-items: center;
+				justify-content: space-between;
+				min-height: 76px;
+				gap: 24px;
+			}
+
+			.site-title {
+				font-family: var(--font-serif-en);
+				font-size: clamp(1.6rem, 3.6vw, 2.2rem);
+				font-weight: 700;
+				line-height: 1;
+				text-decoration: none;
+			}
+
+			nav {
+				display: flex;
+				gap: 1.15rem;
+				color: var(--muted);
+				font-family: var(--font-sans);
+				font-size: 0.9rem;
+			}
+
+			nav a {
+				text-decoration: none;
+			}
+
+			main {
+				padding: clamp(2.6rem, 7vw, 4.8rem) 0;
+			}
+
+			.kicker {
+				margin: 0;
+				color: var(--muted);
+				font-family: var(--font-sans);
+				font-size: 0.82rem;
+				letter-spacing: 0.08em;
+				text-transform: uppercase;
+			}
+
+			.hero {
+				display: grid;
+				grid-template-columns: minmax(0, 0.95fr) minmax(280px, 0.72fr);
+				gap: clamp(1.25rem, 4vw, 3rem);
+				align-items: end;
+				padding-bottom: clamp(1.35rem, 4vw, 2.25rem);
+				border-bottom: 1px solid var(--line);
+			}
+
+			h1 {
+				max-width: 780px;
+				margin: 0.35rem 0 0;
+				font-size: clamp(2.25rem, 6.8vw, 4.35rem);
+				font-weight: 700;
+				line-height: 1.12;
+			}
+
+			.hero p:last-child {
+				margin: 0 0 0.35rem;
+				color: var(--muted);
+				font-size: clamp(1.08rem, 3vw, 1.32rem);
+				line-height: 1.9;
+			}
+
+			.entrances {
+				display: grid;
+				grid-template-columns: repeat(3, minmax(0, 1fr));
+				gap: 1px;
+				margin: clamp(1.75rem, 4vw, 2.75rem) 0;
+				border-block: 1px solid var(--line);
+				font-family: var(--font-sans);
+			}
+
+			.entrance {
+				--tone: var(--journey);
+				--tone-soft: var(--journey-soft);
+				display: grid;
+				gap: 0.7rem;
+				min-height: 184px;
+				padding: clamp(1.1rem, 3vw, 1.6rem);
+				background: color-mix(in srgb, var(--paper-soft) 72%, transparent);
+				text-decoration: none;
+			}
+
+			.entrance + .entrance {
+				border-left: 1px solid var(--line);
+			}
+
+			.entrance::before {
+				content: "";
+				width: 42px;
+				height: 4px;
+				border-radius: 999px;
+				background: var(--tone);
+			}
+
+			.entrance.food {
+				--tone: var(--food);
+				--tone-soft: var(--food-soft);
+			}
+
+			.entrance.people {
+				--tone: var(--people);
+				--tone-soft: var(--people-soft);
+			}
+
+			.entrance span {
+				font-family: var(--font-serif-cn);
+				font-size: clamp(1.7rem, 4vw, 2.45rem);
+				font-weight: 700;
+				line-height: 1.1;
+			}
+
+			.entrance small {
+				color: var(--muted);
+				font-size: 0.92rem;
+				line-height: 1.75;
+			}
+
+			.entrance em {
+				align-self: end;
+				color: var(--tone);
+				font-size: 0.82rem;
+				font-style: normal;
+			}
+
+			.editor-strip {
+				display: grid;
+				grid-template-columns: minmax(0, 0.45fr) minmax(0, 1fr);
+				gap: clamp(1.25rem, 4vw, 3rem);
+				padding: clamp(1.25rem, 4vw, 2rem) 0;
+				border-block: 1px solid var(--line);
+			}
+
+			.editor-strip h2 {
+				margin: 0.3rem 0 0;
+				font-size: clamp(1.5rem, 4vw, 2.2rem);
+				line-height: 1.18;
+			}
+
+			.editor-strip ul {
+				display: grid;
+				grid-template-columns: repeat(3, minmax(0, 1fr));
+				gap: 1rem;
+				margin: 0;
+				padding: 0;
+				list-style: none;
+			}
+
+			.editor-strip li {
+				--tone: var(--journey);
+				display: grid;
+				gap: 0.45rem;
+				padding-left: 1rem;
+				border-left: 4px solid var(--tone);
+			}
+
+			.editor-strip li.food {
+				--tone: var(--food);
+			}
+
+			.editor-strip li.people {
+				--tone: var(--people);
+			}
+
+			.editor-strip strong {
+				font-size: 1.2rem;
+				line-height: 1.2;
+			}
+
+			.editor-strip span {
+				color: var(--muted);
+				font-family: var(--font-sans);
+				font-size: 0.9rem;
+				line-height: 1.7;
+			}
+
+			.post-list {
+				display: grid;
+				gap: clamp(1.75rem, 4vw, 2.75rem);
+				margin-top: clamp(1.75rem, 4vw, 2.75rem);
+			}
+
+			.post {
+				--tone: var(--journey);
+				--tone-soft: var(--journey-soft);
+				display: grid;
+				grid-template-columns: minmax(0, 1fr) minmax(260px, 34%);
+				gap: clamp(1rem, 3vw, 1.5rem);
+				align-items: start;
+				padding-bottom: clamp(1.75rem, 4vw, 2.75rem);
+				border-bottom: 1px solid color-mix(in srgb, var(--tone) 32%, var(--line));
+			}
+
+			.post.food {
+				--tone: var(--food);
+				--tone-soft: var(--food-soft);
+			}
+
+			.post.people {
+				--tone: var(--people);
+				--tone-soft: var(--people-soft);
+			}
+
+			.post-copy::before {
+				content: "";
+				display: block;
+				width: 2.8rem;
+				height: 3px;
+				margin-bottom: 0.8rem;
+				border-radius: 999px;
+				background: var(--tone);
+			}
+
+			.meta {
+				display: flex;
+				flex-wrap: wrap;
+				gap: 0.45rem 0.75rem;
+				align-items: center;
+				color: var(--muted);
+				font-family: var(--font-sans);
+				font-size: 0.84rem;
+				letter-spacing: 0.02em;
+				line-height: 1.4;
+			}
+
+			.meta b {
+				border: 1px solid color-mix(in srgb, var(--tone) 42%, var(--line));
+				border-radius: 999px;
+				padding: 0.12rem 0.55rem;
+				background: var(--tone-soft);
+				color: color-mix(in srgb, var(--tone) 70%, var(--ink));
+				font-weight: 400;
+			}
+
+			.post h2 {
+				margin: 0.35rem 0 0.65rem;
+				font-size: clamp(1.85rem, 4.8vw, 3.05rem);
+				line-height: 1.15;
+			}
+
+			.post p {
+				max-width: 720px;
+				margin: 0;
+				color: var(--muted);
+				font-size: clamp(1.02rem, 2vw, 1.18rem);
+				line-height: 1.85;
+			}
+
+			.cover {
+				aspect-ratio: 16 / 10;
+				border-radius: 6px;
+				background:
+					linear-gradient(135deg, color-mix(in srgb, var(--tone) 38%, transparent), transparent 45%),
+					linear-gradient(45deg, var(--paper-soft), var(--tone-soft));
+			}
+
+			.site-footer {
+				padding: 3rem 0;
+				border-top: 1px solid var(--line);
+				color: var(--muted);
+				font-family: var(--font-sans);
+				font-size: 0.9rem;
+			}
+
+			@media (max-width: 760px) {
+				body {
+					font-size: 17px;
+				}
+
+				.site-header__inner,
+				nav,
+				.hero,
+				.entrances,
+				.editor-strip,
+				.editor-strip ul,
+				.post {
+					grid-template-columns: 1fr;
+				}
+
+				.site-header__inner,
+				nav {
+					align-items: flex-start;
+				}
+
+				.site-header__inner {
+					padding: 18px 0;
+				}
+
+				nav {
+					flex-wrap: wrap;
+					gap: 0.65rem 1rem;
+				}
+
+				.entrance + .entrance {
+					border-left: 0;
+					border-top: 1px solid var(--line);
+				}
+			}
+		</style>
+	</head>
+	<body>
+		<header class="site-header">
+			<div class="site-header__inner">
+				<a class="site-title" href="#">未命名的个人博客</a>
+				<nav aria-label="主导航">
+					<a href="#">首页</a>
+					<a href="#">在路上</a>
+					<a href="#">食</a>
+					<a href="#">物与人</a>
+					<a href="#">关于我</a>
+				</nav>
+			</div>
+		</header>
+
+		<main>
+			<section class="hero">
+				<div>
+					<p class="kicker">Road / Table / People</p>
+					<h1>写路上、餐桌，以及念念不忘的物与人。</h1>
+				</div>
+				<p>这里会放游记、食记、生活感悟，也会写喜欢的设计、装修、作家、物件和朋友。整体想要明快一点，但仍然安静、耐读、有纸张感。</p>
+			</section>
+
+			<section class="entrances" aria-label="内容入口">
+				<a class="entrance" href="#">
+					<span>在路上</span>
+					<small>把路途、城市、车窗、旅馆和抵达之前的心情写下来。</small>
+					<em>雾霭蓝</em>
+				</a>
+				<a class="entrance food" href="#">
+					<span>食</span>
+					<small>记录餐桌、味道、小店、菜单，以及一次饭里藏着的生活。</small>
+					<em>浅陶杏</em>
+				</a>
+				<a class="entrance people" href="#">
+					<span>物与人</span>
+					<small>写喜欢的设计、装修、作家、物件，也写朋友和那些值得反复想起的人。</small>
+					<em>灰橄榄</em>
+				</a>
+			</section>
+
+			<section class="editor-strip">
+				<div>
+					<p class="kicker">Editor's Notes</p>
+					<h2>以后可以这样写</h2>
+				</div>
+				<ul>
+					<li><strong>在路上</strong><span>给远处、清晨和路上的风。</span></li>
+					<li class="food"><strong>食</strong><span>给热汤、炉火和靠窗的桌子。</span></li>
+					<li class="people"><strong>物与人</strong><span>给房间、书页和人与人之间的细节。</span></li>
+				</ul>
+			</section>
+
+			<section class="post-list" aria-label="文章列表">
+				<article class="post">
+					<div class="post-copy">
+						<div class="meta"><b>在路上</b><span>2026年6月22日</span><span>Xinjiang</span><span>1 min read</span></div>
+						<h2>占位｜在公路尽头停一下</h2>
+						<p>一篇游记占位内容，写路途、车窗和抵达之前那些很慢的时刻。</p>
+					</div>
+					<div class="cover" role="img" aria-label="路途封面占位"></div>
+				</article>
+
+				<article class="post food">
+					<div class="post-copy">
+						<div class="meta"><b>食</b><span>2026年5月18日</span><span>A Small Restaurant</span><span>1 min read</span></div>
+						<h2>占位｜一碗热汤和一张靠窗的桌子</h2>
+						<p>一篇食记占位内容，记录小店、热汤、同桌人的闲话和一个晚上慢慢落下来的心情。</p>
+					</div>
+					<div class="cover" role="img" aria-label="餐桌封面占位"></div>
+				</article>
+
+				<article class="post people">
+					<div class="post-copy">
+						<div class="meta"><b>物与人</b><span>2026年4月8日</span><span>朋友</span><span>1 min read</span></div>
+						<h2>占位｜和朋友在下午见面</h2>
+						<p>一篇写朋友的占位内容，不像人物采访，更像把一次相处稳稳地记下来。</p>
+					</div>
+					<div class="cover" role="img" aria-label="朋友与房间封面占位"></div>
+				</article>
+			</section>
+		</main>
+
+		<footer class="site-footer">
+			<p>一个关于路上、餐桌、物件和朋友的私人博客。</p>
+		</footer>
+	</body>
+</html>

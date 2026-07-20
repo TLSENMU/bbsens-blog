@@ -1,0 +1,12 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+---
+
+<BaseLayout title="页面不存在" description="没有找到这个页面。">
+	<section class="page-shell" aria-labelledby="not-found-title">
+		<p class="page-kicker">404</p>
+		<h1 id="not-found-title" class="page-title">这页暂时不在这里。</h1>
+		<p class="page-description">可能是链接写错了，也可能是文章还没有发布。回到首页继续看看。</p>
+		<a href="/">返回首页</a>
+	</section>
+</BaseLayout>

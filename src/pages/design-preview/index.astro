@@ -1,0 +1,472 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+
+const samplePosts = [
+	{
+		title: '新疆游记 Day3：在公路尽头停一下',
+		englishTitle: 'A Pause at the End of the Road',
+		description: '风从谷口吹过来，车窗外的山坡像被水洗过。那一天没有宏大的抵达，只有几次很慢的停留。',
+		date: 'JUNE 22, 2026',
+		tags: ['travel', 'Xinjiang'],
+		readingTime: '4 min read',
+		cover: '/assets/covers/travel.jpg',
+		coverAlt: '占位封面：柔和山谷色调的旅行图片',
+	},
+	{
+		title: '下午四点的房间',
+		englishTitle: 'A Room at Four in the Afternoon',
+		description: '桌上的杯子、没合上的书、电脑旁边的一张便签，都在光线里显得比平时更有耐心。',
+		date: 'MAY 18, 2026',
+		tags: ['daily', 'life'],
+		readingTime: '3 min read',
+		cover: '/assets/covers/daily.jpg',
+		coverAlt: '占位封面：暖白与绿色交织的日常图片',
+	},
+];
+
+const schemes = [
+	{
+		id: 'a',
+		name: '方案 A：文学杂志型',
+		note: '最接近参考气质，标题更有宋体感，列表纵向、图片宽大、纸张感更强。',
+	},
+	{
+		id: 'b',
+		name: '方案 B：现代编辑型',
+		note: '版式更现代，网格和对齐更明确，适合旅行、摄影和长文并存。',
+	},
+	{
+		id: 'c',
+		name: '方案 C：极简个人型',
+		note: '信息更少、留白更多，强调作者气质和近期文章，但不做成简历。',
+	},
+];
+---
+
+<BaseLayout title="设计方案预览" description="三套个人博客首页视觉方向比较。">
+	<section class="wide-shell design-preview" aria-labelledby="preview-title">
+		<p class="page-kicker">Design Preview</p>
+		<h1 id="preview-title" class="page-title">三套首页视觉方向</h1>
+		<p class="page-description">
+			这页只用于比较候选设计。A、B、C 使用同一组示例文章和封面图片；在你选择前，三套方案都会保留。
+		</p>
+
+		<div class="scheme-list">
+			{schemes.map((scheme) => (
+				<section class={`scheme scheme-${scheme.id}`} aria-labelledby={`scheme-${scheme.id}`}>
+					<div class="scheme-heading">
+						<div>
+							<p class="scheme-label">Candidate {scheme.id.toUpperCase()}</p>
+							<h2 id={`scheme-${scheme.id}`}>{scheme.name}</h2>
+						</div>
+						<p>{scheme.note}</p>
+					</div>
+
+					<div class="preview-grid">
+						<div class="browser-frame desktop-frame">
+							<div class="frame-top">
+								<span></span><span></span><span></span>
+							</div>
+							<div class="preview-page">
+								<div class="preview-nav">
+									<strong>Personal Journal</strong>
+									<nav><span>Blog</span><span>Photos</span><span>About</span></nav>
+								</div>
+								<div class="preview-intro">
+									<p>Travel / Notes / Life</p>
+									<h3>在路上，也在纸页之间。</h3>
+								</div>
+								<div class="preview-posts">
+									{samplePosts.map((post) => (
+										<article>
+											<div class="preview-copy">
+												<div class="preview-meta">
+													<span>{post.date}</span>
+													{post.tags.map((tag) => <span>#{tag}</span>)}
+													<span>{post.readingTime}</span>
+												</div>
+												<h4>{post.title}</h4>
+												<h5>{post.englishTitle}</h5>
+												<p>{post.description}</p>
+											</div>
+											<img src={post.cover} alt={post.coverAlt} loading="lazy" width="1600" height="1000" />
+										</article>
+									))}
+								</div>
+							</div>
+						</div>
+
+						<div class="phone-frame">
+							<div class="phone-bar"></div>
+							<div class="preview-page">
+								<div class="preview-nav">
+									<strong>Journal</strong>
+									<span>☰</span>
+								</div>
+								<div class="preview-intro">
+									<p>Recent</p>
+									<h3>在路上，也在纸页之间。</h3>
+								</div>
+								<div class="preview-posts">
+									{samplePosts.map((post) => (
+										<article>
+											<div class="preview-copy">
+												<div class="preview-meta">
+													<span>{post.date}</span>
+													<span>{post.readingTime}</span>
+												</div>
+												<h4>{post.title}</h4>
+												<h5>{post.englishTitle}</h5>
+												<p>{post.description}</p>
+												<div class="preview-tags">
+													{post.tags.map((tag) => <span>#{tag}</span>)}
+												</div>
+											</div>
+											<img src={post.cover} alt={post.coverAlt} loading="lazy" width="1600" height="1000" />
+										</article>
+									))}
+								</div>
+							</div>
+						</div>
+					</div>
+				</section>
+			))}
+		</div>
+	</section>
+
+	<style>
+		.design-preview {
+			--preview-gap: clamp(20px, 4vw, 36px);
+		}
+
+		.scheme-list {
+			display: grid;
+			gap: clamp(40px, 7vw, 72px);
+		}
+
+		.scheme {
+			--scheme-bg: #f8f3ea;
+			--scheme-text: #1f1d1a;
+			--scheme-muted: #746f67;
+			--scheme-line: #e3dbce;
+			--scheme-serif-cn: var(--font-serif-cn);
+			--scheme-serif-en: var(--font-serif-en);
+			--scheme-sans: var(--font-sans);
+			--scheme-width: 980px;
+			--scheme-radius: 8px;
+			--scheme-title: clamp(2rem, 5vw, 4.5rem);
+			--scheme-body: 1rem;
+			--scheme-space: 28px;
+		}
+
+		.scheme-b {
+			--scheme-bg: #f6f1e7;
+			--scheme-text: #26231f;
+			--scheme-muted: #6a6660;
+			--scheme-line: #ded5c7;
+			--scheme-width: 1040px;
+			--scheme-radius: 6px;
+			--scheme-title: clamp(1.8rem, 4vw, 3.4rem);
+			--scheme-space: 22px;
+		}
+
+		.scheme-c {
+			--scheme-bg: #fbf8f1;
+			--scheme-text: #20201d;
+			--scheme-muted: #777168;
+			--scheme-line: #ebe4d9;
+			--scheme-width: 860px;
+			--scheme-radius: 4px;
+			--scheme-title: clamp(1.9rem, 4.4vw, 3.7rem);
+			--scheme-space: 38px;
+		}
+
+		.scheme-heading {
+			display: grid;
+			grid-template-columns: minmax(0, 1fr) minmax(240px, 0.7fr);
+			gap: var(--space-4);
+			align-items: end;
+			margin-bottom: var(--space-4);
+		}
+
+		.scheme-label,
+		.scheme-heading p {
+			margin: 0;
+			color: var(--color-muted);
+			font-family: var(--font-sans);
+			font-size: 0.9rem;
+			line-height: 1.7;
+		}
+
+		.scheme-heading h2 {
+			margin: 0.2rem 0 0;
+			font-size: clamp(1.65rem, 4vw, 2.4rem);
+			line-height: 1.2;
+		}
+
+		.preview-grid {
+			display: grid;
+			grid-template-columns: minmax(0, 1fr) minmax(250px, 320px);
+			gap: var(--preview-gap);
+			align-items: start;
+		}
+
+		.browser-frame,
+		.phone-frame {
+			overflow: hidden;
+			border: 1px solid var(--color-line);
+			background: var(--scheme-bg);
+			box-shadow: var(--shadow-soft);
+		}
+
+		.browser-frame {
+			border-radius: 10px;
+		}
+
+		.phone-frame {
+			border-radius: 28px;
+			padding: 12px;
+		}
+
+		.frame-top {
+			display: flex;
+			gap: 7px;
+			padding: 10px 14px;
+			border-bottom: 1px solid var(--scheme-line);
+		}
+
+		.frame-top span,
+		.phone-bar {
+			background: var(--scheme-line);
+		}
+
+		.frame-top span {
+			width: 9px;
+			height: 9px;
+			border-radius: 50%;
+		}
+
+		.phone-bar {
+			width: 72px;
+			height: 5px;
+			margin: 2px auto 12px;
+			border-radius: 99px;
+		}
+
+		.preview-page {
+			width: min(100%, var(--scheme-width));
+			margin: 0 auto;
+			padding: var(--scheme-space);
+			background: var(--scheme-bg);
+			color: var(--scheme-text);
+		}
+
+		.preview-nav {
+			display: flex;
+			align-items: center;
+			justify-content: space-between;
+			gap: 18px;
+			padding-bottom: 18px;
+			border-bottom: 1px solid var(--scheme-line);
+			font-family: var(--scheme-sans);
+			color: var(--scheme-muted);
+			font-size: 0.82rem;
+		}
+
+		.preview-nav strong {
+			color: var(--scheme-text);
+			font-family: var(--scheme-serif-en);
+			font-size: 1.3rem;
+		}
+
+		.preview-nav nav {
+			display: flex;
+			gap: 16px;
+		}
+
+		.preview-intro {
+			padding: 28px 0 22px;
+		}
+
+		.preview-intro p,
+		.preview-meta,
+		.preview-tags {
+			font-family: var(--scheme-sans);
+			color: var(--scheme-muted);
+		}
+
+		.preview-intro p {
+			margin: 0 0 8px;
+			font-size: 0.78rem;
+			text-transform: uppercase;
+		}
+
+		.preview-intro h3 {
+			max-width: 760px;
+			margin: 0;
+			font-family: var(--scheme-serif-cn);
+			font-size: var(--scheme-title);
+			font-weight: 700;
+			line-height: 1.08;
+		}
+
+		.preview-posts {
+			display: grid;
+			gap: var(--scheme-space);
+		}
+
+		.preview-posts article {
+			display: grid;
+			grid-template-columns: minmax(0, 1fr) minmax(180px, 36%);
+			gap: 24px;
+			padding-top: var(--scheme-space);
+			border-top: 1px solid var(--scheme-line);
+		}
+
+		.scheme-a .preview-posts article {
+			grid-template-columns: minmax(0, 1fr);
+		}
+
+		.scheme-c .preview-posts article:first-child {
+			padding-top: 0;
+			border-top: 0;
+		}
+
+		.preview-meta,
+		.preview-tags {
+			display: flex;
+			flex-wrap: wrap;
+			gap: 8px 12px;
+			font-size: 0.78rem;
+			line-height: 1.4;
+		}
+
+		.preview-copy h4,
+		.preview-copy h5,
+		.preview-copy p {
+			margin: 0;
+		}
+
+		.preview-copy h4 {
+			margin-top: 9px;
+			font-family: var(--scheme-serif-cn);
+			font-size: clamp(1.45rem, 4vw, 3rem);
+			font-weight: 700;
+			line-height: 1.14;
+		}
+
+		.preview-copy h5 {
+			margin-top: 7px;
+			color: var(--scheme-muted);
+			font-family: var(--scheme-serif-en);
+			font-size: clamp(1.05rem, 2vw, 1.45rem);
+			font-weight: 600;
+			line-height: 1.25;
+		}
+
+		.preview-copy p {
+			margin-top: 12px;
+			color: var(--scheme-muted);
+			font-family: var(--scheme-serif-cn);
+			font-size: var(--scheme-body);
+			line-height: 1.8;
+		}
+
+		.preview-posts img {
+			width: 100%;
+			aspect-ratio: 16 / 10;
+			border-radius: var(--scheme-radius);
+			object-fit: cover;
+		}
+
+		.scheme-a .desktop-frame .preview-posts img {
+			margin-top: 18px;
+		}
+
+		.scheme-b .preview-page {
+			padding-top: 22px;
+		}
+
+		.scheme-b .desktop-frame .preview-posts {
+			grid-template-columns: repeat(2, minmax(0, 1fr));
+			gap: 28px;
+		}
+
+		.scheme-b .desktop-frame .preview-posts article {
+			display: flex;
+			flex-direction: column-reverse;
+			gap: 18px;
+		}
+
+		.scheme-c .preview-intro {
+			padding: 54px 0 46px;
+		}
+
+		.scheme-c .desktop-frame .preview-posts article {
+			grid-template-columns: minmax(0, 0.82fr) minmax(160px, 0.3fr);
+		}
+
+		.phone-frame .preview-page {
+			padding: 20px;
+		}
+
+		.phone-frame .preview-nav nav {
+			display: none;
+		}
+
+		.phone-frame .preview-nav strong {
+			font-size: 1.15rem;
+		}
+
+		.phone-frame .preview-intro {
+			padding: 24px 0 18px;
+		}
+
+		.phone-frame .preview-intro h3 {
+			font-size: 2.15rem;
+		}
+
+		.phone-frame .preview-posts article {
+			grid-template-columns: 1fr;
+			gap: 14px;
+		}
+
+		.phone-frame .preview-copy h4 {
+			font-size: 1.75rem;
+		}
+
+		.phone-frame .preview-copy h5 {
+			font-size: 1.05rem;
+		}
+
+		.phone-frame .preview-copy p {
+			font-size: 0.98rem;
+		}
+
+		.phone-frame .preview-tags {
+			margin-top: 12px;
+		}
+
+		@media (max-width: 980px) {
+			.scheme-heading,
+			.preview-grid {
+				grid-template-columns: 1fr;
+			}
+
+			.phone-frame {
+				max-width: 360px;
+			}
+		}
+
+		@media (max-width: 640px) {
+			.preview-posts article,
+			.scheme-c .desktop-frame .preview-posts article {
+				grid-template-columns: 1fr;
+			}
+
+			.scheme-b .desktop-frame .preview-posts {
+				grid-template-columns: 1fr;
+			}
+		}
+	</style>
+</BaseLayout>

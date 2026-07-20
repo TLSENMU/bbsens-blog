@@ -1,0 +1,30 @@
+---
+import { getCollection } from 'astro:content';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { formatDate } from '../../lib/posts';
+import { getSeasonUrl, sortSeasons } from '../../lib/seasons';
+
+const seasons = sortSeasons(await getCollection('seasons', ({ data }) => !data.draft));
+---
+
+<BaseLayout title="季笺" description="按季度整理的思考、生活和一句想留下的话。">
+	<section class="page-shell" aria-labelledby="seasons-title">
+		<p class="page-kicker">Seasonal Letters</p>
+		<h1 id="seasons-title" class="page-title">季笺</h1>
+		<p class="page-description">每一季留下一次经过筛选的回望，不追逐实时状态，只保存仍然值得想起的片段。</p>
+		<div class="archive-list">
+			<section>
+				<ul>
+					{seasons.map((season) => (
+						<li>
+							<a href={getSeasonUrl(season)}>
+								<time datetime={season.data.publishDate.toISOString()}>{formatDate(season.data.publishDate)}</time>
+								<span>{season.data.title}</span>
+							</a>
+						</li>
+					))}
+				</ul>
+			</section>
+		</div>
+	</section>
+</BaseLayout>

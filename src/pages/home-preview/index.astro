@@ -1,0 +1,449 @@
+---
+import { getCollection } from 'astro:content';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import PostMeta from '../../components/PostMeta.astro';
+import { categoryMap, estimateReadingTime, getPostsByCategory, getPostUrl, sortPosts } from '../../lib/posts';
+import { getSeasonUrl, sortSeasons } from '../../lib/seasons';
+
+const posts = sortPosts(await getCollection('blog', ({ data }) => !data.draft));
+const seasons = sortSeasons(await getCollection('seasons', ({ data }) => !data.draft));
+const latestSeason = seasons[0];
+const categoryEntries = Object.entries(categoryMap).map(([key, category]) => ({
+	key,
+	...category,
+	count: getPostsByCategory(posts, key as keyof typeof categoryMap).length,
+}));
+
+const seasonalPicks = (Object.keys(categoryMap) as Array<keyof typeof categoryMap>)
+	.map((category) => posts.find((post) => post.data.category === category && post.data.featured))
+	.filter(Boolean);
+
+const recentPosts = posts
+	.slice()
+	.sort((a, b) => {
+		const aDate = (a.data.updatedDate ?? a.data.publishDate).getTime();
+		const bDate = (b.data.updatedDate ?? b.data.publishDate).getTime();
+		return bDate - aDate;
+	})
+	.slice(0, 5);
+
+const seasonNotes = [
+	{ label: '思考', text: '留下的不是全部，而是经过时间筛过以后仍然发亮的部分。' },
+	{ label: '生活', text: '几顿慢慢吃完的饭，一间有风的房间，和一次没有主题的见面。' },
+	{ label: '笺言', text: '愿许多小事，不必变得重大，也能被认真看见。' },
+];
+
+const quietImages = [
+	{ src: '/assets/covers/travel.jpg', alt: '占位图：路途上的柔和色块', caption: '路上的光' },
+	{ src: '/assets/covers/daily.jpg', alt: '占位图：餐桌和房间气氛', caption: '一顿慢饭' },
+	{ src: '/assets/covers/essay.jpg', alt: '占位图：傍晚城市与笔记', caption: '见面以后' },
+	{ src: '/assets/covers/notes.jpg', alt: '占位图：房间与纸页气氛', caption: '房间一角' },
+];
+---
+
+<BaseLayout title="新版首页预览" description="个人博客新版首页设计预览。">
+	<section class="home-preview-shell" aria-labelledby="home-preview-title">
+		<div class="preview-hero">
+			<div>
+				<p class="page-kicker">Road / Table / People</p>
+				<h1 id="home-preview-title">写路上、餐桌，以及念念不忘的物与人。</h1>
+			</div>
+			<figure>
+				<img src="/assets/covers/travel.jpg" alt="占位图：柔和路途气氛" loading="eager" width="1600" height="1000" />
+				<figcaption>游记、食记、朋友和喜欢的物件，都慢一点写。</figcaption>
+			</figure>
+		</div>
+
+		<nav class="preview-entrances" aria-label="内容入口">
+			{categoryEntries.map((category) => (
+				<a href={category.href} data-category={category.key}>
+					<span>{category.label}</span>
+					<small>{category.description}</small>
+					<em>{category.tone} · {category.count} 篇</em>
+				</a>
+			))}
+		</nav>
+
+		{latestSeason && (
+			<section class="season-feature" aria-labelledby="season-feature-title">
+				<div class="season-feature__text">
+					<p class="page-kicker">这一季</p>
+					<h2 id="season-feature-title">{latestSeason.data.year} {latestSeason.data.season}</h2>
+					<p>{latestSeason.data.description}</p>
+					<dl>
+						{seasonNotes.map((item) => (
+							<div>
+								<dt>{item.label}</dt>
+								<dd>{item.text}</dd>
+							</div>
+						))}
+					</dl>
+					<a class="season-link" href={getSeasonUrl(latestSeason)}>读完整季笺</a>
+				</div>
+				{latestSeason.data.cover && (
+					<img src={latestSeason.data.cover} alt={latestSeason.data.coverAlt ?? ''} loading="lazy" width="1600" height="1000" />
+				)}
+			</section>
+		)}
+
+		<section class="curated-section" aria-labelledby="curated-title">
+			<div class="section-heading">
+				<p class="page-kicker">Selected This Season</p>
+				<h2 id="curated-title">当季精选</h2>
+			</div>
+			<div class="curated-list">
+				{seasonalPicks.map((post) => (
+					<article data-category={post.data.category}>
+						<PostMeta post={post} readingTime={estimateReadingTime(post.body)} />
+						<h3><a href={getPostUrl(post)}>{post.data.title}</a></h3>
+						<p>{post.data.description}</p>
+					</article>
+				))}
+			</div>
+		</section>
+
+		<section class="recent-section" aria-labelledby="recent-title">
+			<div class="section-heading">
+				<p class="page-kicker">Recently Updated</p>
+				<h2 id="recent-title">最近更新</h2>
+			</div>
+			<div class="recent-list">
+				{recentPosts.map((post) => (
+					<article data-category={post.data.category}>
+						<PostMeta post={post} readingTime={estimateReadingTime(post.body)} />
+						<h3><a href={getPostUrl(post)}>{post.data.title}</a></h3>
+						<p>{post.data.description}</p>
+					</article>
+				))}
+			</div>
+		</section>
+
+		<section class="quiet-images" aria-labelledby="quiet-images-title">
+			<div class="section-heading">
+				<p class="page-kicker">Selected Images</p>
+				<h2 id="quiet-images-title">拾影</h2>
+			</div>
+			<div class="quiet-image-strip">
+				{quietImages.map((image) => (
+					<figure>
+						<img src={image.src} alt={image.alt} loading="lazy" width="1600" height="1000" />
+						<figcaption>{image.caption}</figcaption>
+					</figure>
+				))}
+			</div>
+		</section>
+	</section>
+
+	<style>
+		.home-preview-shell {
+			width: min(100% - var(--page-gutter) * 2, var(--content-width));
+			margin-inline: auto;
+			padding: clamp(2.4rem, 7vw, 4.7rem) 0;
+		}
+
+		.preview-hero {
+			display: grid;
+			grid-template-columns: minmax(0, 1fr) minmax(260px, 36%);
+			gap: clamp(1.4rem, 4vw, 3rem);
+			align-items: end;
+			padding-bottom: clamp(1.5rem, 4vw, 2.4rem);
+			border-bottom: 1px solid var(--color-line);
+		}
+
+		.preview-hero h1 {
+			max-width: 780px;
+			margin: 0.35rem 0 0;
+			font-family: var(--font-serif-cn);
+			font-size: clamp(2.3rem, 6.7vw, 4.45rem);
+			font-weight: 700;
+			line-height: 1.12;
+		}
+
+		.preview-hero figure,
+		.quiet-images figure {
+			margin: 0;
+		}
+
+		.preview-hero img,
+		.season-feature img,
+		.quiet-images img {
+			width: 100%;
+			border-radius: var(--radius-image);
+			background: var(--color-line);
+			object-fit: cover;
+		}
+
+		.preview-hero img {
+			aspect-ratio: 4 / 3;
+		}
+
+		.preview-hero figcaption,
+		.quiet-images figcaption {
+			margin-top: 0.65rem;
+			color: var(--color-muted);
+			font-family: var(--font-sans);
+			font-size: 0.88rem;
+			line-height: 1.55;
+		}
+
+		.preview-entrances {
+			display: grid;
+			grid-template-columns: repeat(3, minmax(0, 1fr));
+			gap: 1px;
+			margin: clamp(1.75rem, 4vw, 2.75rem) 0;
+			border-block: 1px solid var(--color-line);
+			font-family: var(--font-sans);
+		}
+
+		.preview-entrances a {
+			display: grid;
+			gap: 0.7rem;
+			min-height: 184px;
+			padding: clamp(1.1rem, 3vw, 1.6rem);
+			background: color-mix(in srgb, var(--color-bg-soft) 72%, transparent);
+			text-decoration: none;
+		}
+
+		.preview-entrances a + a {
+			border-left: 1px solid var(--color-line);
+		}
+
+		.preview-entrances a::before {
+			content: "";
+			width: 42px;
+			height: 4px;
+			border-radius: 999px;
+			background: var(--category-color, var(--color-accent));
+		}
+
+		.preview-entrances span {
+			font-family: var(--font-serif-cn);
+			font-size: clamp(1.7rem, 4vw, 2.45rem);
+			font-weight: 700;
+			line-height: 1.1;
+		}
+
+		.preview-entrances small {
+			color: var(--color-muted);
+			font-size: 0.92rem;
+			line-height: 1.75;
+		}
+
+		.preview-entrances em {
+			align-self: end;
+			color: var(--category-color, var(--color-faint));
+			font-size: 0.82rem;
+			font-style: normal;
+		}
+
+		.season-feature {
+			display: grid;
+			grid-template-columns: minmax(0, 1fr) minmax(260px, 34%);
+			gap: clamp(1.4rem, 4vw, 2.4rem);
+			align-items: stretch;
+			margin: clamp(1.75rem, 4vw, 3rem) 0;
+			padding: clamp(1.35rem, 4vw, 2.1rem) 0;
+			border-block: 1px solid color-mix(in srgb, var(--category-journey) 26%, var(--color-line));
+		}
+
+		.season-feature__text {
+			display: grid;
+			align-content: start;
+			gap: 1rem;
+		}
+
+		.season-feature h2,
+		.section-heading h2 {
+			margin: 0;
+			font-family: var(--font-serif-cn);
+			font-size: clamp(1.75rem, 5vw, 2.75rem);
+			line-height: 1.15;
+		}
+
+		.season-feature p {
+			max-width: 660px;
+			margin: 0;
+			color: var(--color-muted);
+			font-size: clamp(1.02rem, 2vw, 1.16rem);
+			line-height: 1.85;
+		}
+
+		.season-feature dl {
+			display: grid;
+			grid-template-columns: repeat(3, minmax(0, 1fr));
+			gap: 1px;
+			margin: 0;
+			border-block: 1px solid var(--color-line);
+		}
+
+		.season-feature dl div {
+			display: grid;
+			gap: 0.45rem;
+			padding: 1rem;
+			background: color-mix(in srgb, var(--category-journey-soft) 62%, transparent);
+		}
+
+		.season-feature dl div + div {
+			border-left: 1px solid var(--color-line);
+		}
+
+		.season-feature dt {
+			color: color-mix(in srgb, var(--category-journey) 70%, var(--color-text));
+			font-family: var(--font-serif-cn);
+			font-size: 1.2rem;
+			font-weight: 700;
+			line-height: 1.2;
+		}
+
+		.season-feature dd {
+			margin: 0;
+			color: var(--color-muted);
+			font-family: var(--font-sans);
+			font-size: 0.9rem;
+			line-height: 1.7;
+		}
+
+		.season-link {
+			justify-self: start;
+			color: var(--color-text);
+			font-family: var(--font-sans);
+			font-size: 0.92rem;
+		}
+
+		.season-feature img {
+			height: 100%;
+			min-height: 280px;
+			aspect-ratio: 4 / 5;
+		}
+
+		.curated-section,
+		.recent-section,
+		.quiet-images {
+			margin-top: clamp(2rem, 5vw, 3.4rem);
+		}
+
+		.section-heading {
+			display: flex;
+			align-items: end;
+			justify-content: space-between;
+			gap: 1rem;
+			margin-bottom: 1.2rem;
+			padding-bottom: 0.9rem;
+			border-bottom: 1px solid var(--color-line);
+		}
+
+		.curated-list {
+			display: grid;
+			grid-template-columns: repeat(3, minmax(0, 1fr));
+			gap: 1px;
+			border-bottom: 1px solid var(--color-line);
+		}
+
+		.curated-list article,
+		.recent-list article {
+			position: relative;
+			display: grid;
+			gap: 0.8rem;
+			padding: 1.15rem 0;
+			border-top: 1px solid color-mix(in srgb, var(--category-color, var(--color-line)) 32%, var(--color-line));
+		}
+
+		.curated-list article {
+			padding: 1rem;
+			background: linear-gradient(180deg, var(--category-soft, transparent), transparent 70%);
+		}
+
+		.curated-list article + article {
+			border-left: 1px solid var(--color-line);
+		}
+
+		.curated-list h3,
+		.recent-list h3 {
+			margin: 0;
+			font-family: var(--font-serif-cn);
+			font-size: clamp(1.35rem, 3vw, 1.9rem);
+			line-height: 1.2;
+		}
+
+		.curated-list h3 a,
+		.recent-list h3 a {
+			text-decoration: none;
+		}
+
+		.curated-list p,
+		.recent-list p {
+			margin: 0;
+			color: var(--color-muted);
+			font-size: 1rem;
+			line-height: 1.75;
+		}
+
+		.recent-list {
+			display: grid;
+		}
+
+		.recent-list article {
+			grid-template-columns: minmax(0, 0.35fr) minmax(0, 1fr);
+			gap: 1.2rem;
+		}
+
+		.recent-list article h3,
+		.recent-list article p {
+			grid-column: 2;
+		}
+
+		.recent-list article .post-meta {
+			grid-row: 1 / span 2;
+		}
+
+		.quiet-image-strip {
+			display: grid;
+			grid-template-columns: 1.2fr 0.9fr 0.9fr 1.05fr;
+			gap: 1px;
+			border-block: 1px solid var(--color-line);
+			background: var(--color-line);
+		}
+
+		.quiet-images figure {
+			background: var(--color-bg);
+			padding: 0.8rem;
+		}
+
+		.quiet-images img {
+			aspect-ratio: 5 / 4;
+		}
+
+		@media (max-width: 860px) {
+			.preview-hero,
+			.preview-entrances,
+			.season-feature,
+			.season-feature dl,
+			.curated-list,
+			.recent-list article,
+			.quiet-image-strip {
+				grid-template-columns: 1fr;
+			}
+
+			.preview-entrances a + a,
+			.season-feature dl div + div,
+			.curated-list article + article {
+				border-left: 0;
+				border-top: 1px solid var(--color-line);
+			}
+
+			.recent-list article h3,
+			.recent-list article p {
+				grid-column: auto;
+			}
+
+			.recent-list article .post-meta {
+				grid-row: auto;
+			}
+
+			.season-feature img {
+				aspect-ratio: 16 / 10;
+				min-height: 0;
+			}
+		}
+	</style>
+</BaseLayout>

@@ -1,0 +1,29 @@
+---
+import type { BlogPost } from '../lib/posts';
+import PostMeta from './PostMeta.astro';
+import { estimateReadingTime, getPostUrl } from '../lib/posts';
+
+interface Props {
+	posts: BlogPost[];
+	compact?: boolean;
+}
+
+const { posts, compact = false } = Astro.props;
+---
+
+<div class:list={['post-list', compact && 'post-list--compact']}>
+	{posts.map((post) => (
+		<article class="post-entry" data-category={post.data.category}>
+			<div class="post-entry__content">
+				<PostMeta post={post} readingTime={estimateReadingTime(post.body)} />
+				<h2><a href={getPostUrl(post)}>{post.data.title}</a></h2>
+				<p>{post.data.description}</p>
+			</div>
+			{!compact && (
+				<a class="post-entry__cover" href={getPostUrl(post)} aria-label={`阅读 ${post.data.title}`}>
+					<img src={post.data.cover} alt={post.data.coverAlt} loading="lazy" width="1600" height="1000" />
+				</a>
+			)}
+		</article>
+	))}
+</div>

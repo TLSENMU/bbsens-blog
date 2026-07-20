@@ -1,0 +1,32 @@
+---
+import ThemeToggle from './ThemeToggle.astro';
+import { siteConfig } from '../lib/site';
+
+const pathname = Astro.url.pathname;
+
+function isCurrent(href: string) {
+	if (href === '/') return pathname === '/';
+	return pathname.startsWith(href);
+}
+---
+
+<header class="site-header">
+	<div class="site-header__inner">
+		<a class="site-title" href="/">{siteConfig.name}</a>
+		<nav class="desktop-nav" aria-label="主导航">
+			{siteConfig.nav.map((item) => <a href={item.href} aria-current={isCurrent(item.href) ? 'page' : undefined}>{item.label}</a>)}
+		</nav>
+		<div class="header-actions">
+			<a class="icon-link" href="/rss.xml" aria-label="RSS 订阅" title="RSS 订阅">
+				<span aria-hidden="true">RSS</span>
+			</a>
+			<ThemeToggle />
+			<details class="mobile-menu">
+				<summary aria-label="打开导航"><span></span><span></span><span></span></summary>
+				<nav aria-label="移动端主导航">
+					{siteConfig.nav.map((item) => <a href={item.href} aria-current={isCurrent(item.href) ? 'page' : undefined}>{item.label}</a>)}
+				</nav>
+			</details>
+		</div>
+	</div>
+</header>

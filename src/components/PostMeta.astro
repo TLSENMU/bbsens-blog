@@ -1,0 +1,20 @@
+---
+import type { BlogPost } from '../lib/posts';
+import { categoryMap, formatDate, slugifyTag } from '../lib/posts';
+
+interface Props {
+	post: BlogPost;
+	readingTime?: string;
+}
+
+const { post, readingTime } = Astro.props;
+const category = categoryMap[post.data.category];
+---
+
+<div class="post-meta">
+	<a class="post-meta__category" href={category.href}>{category.label}</a>
+	<time datetime={post.data.publishDate.toISOString()}>{formatDate(post.data.publishDate)}</time>
+	{post.data.location && <span>{post.data.location}</span>}
+	{post.data.tags.map((tag) => <a href={`/tags/${slugifyTag(tag)}/`}>#{tag}</a>)}
+	{readingTime && <span>{readingTime}</span>}
+</div>

@@ -1,0 +1,20 @@
+---
+import { getCollection } from 'astro:content';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { getAllTags, slugifyTag, sortPosts } from '../../lib/posts';
+
+const posts = sortPosts(await getCollection('blog', ({ data }) => !data.draft));
+const tags = getAllTags(posts);
+---
+
+<BaseLayout title="标签" description="按标签浏览文章。">
+	<section class="page-shell" aria-labelledby="tags-title">
+		<p class="page-kicker">Tags</p>
+		<h1 id="tags-title" class="page-title">标签</h1>
+		<div class="tag-cloud">
+			{tags.map(([tag, count]) => (
+				<a href={`/tags/${slugifyTag(tag)}/`}>#{tag} <span>{count}</span></a>
+			))}
+		</div>
+	</section>
+</BaseLayout>

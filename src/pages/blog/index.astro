@@ -1,0 +1,16 @@
+---
+import { getCollection } from 'astro:content';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import PostList from '../../components/PostList.astro';
+import { sortPosts } from '../../lib/posts';
+
+const posts = sortPosts(await getCollection('blog', ({ data }) => !data.draft));
+---
+
+<BaseLayout title="所有文章" description="全部博客文章列表。">
+	<section class="page-shell" aria-labelledby="blog-title">
+		<p class="page-kicker">All Posts</p>
+		<h1 id="blog-title" class="page-title">所有文章</h1>
+		<PostList posts={posts} />
+	</section>
+</BaseLayout>

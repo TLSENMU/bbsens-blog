@@ -1,0 +1,19 @@
+---
+import { getCollection } from 'astro:content';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import PostList from '../../components/PostList.astro';
+import { categoryMap, getPostsByCategory, sortPosts } from '../../lib/posts';
+
+const posts = sortPosts(await getCollection('blog', ({ data }) => !data.draft));
+const category = categoryMap.food;
+const categoryPosts = getPostsByCategory(posts, 'food');
+---
+
+<BaseLayout title={category.label} description={category.description}>
+	<section class="page-shell category-page" data-category="food" aria-labelledby="food-title">
+		<p class="page-kicker">Food Notes</p>
+		<h1 id="food-title" class="page-title">{category.label}</h1>
+		<p class="page-description">{category.description}</p>
+		<PostList posts={categoryPosts} />
+	</section>
+</BaseLayout>

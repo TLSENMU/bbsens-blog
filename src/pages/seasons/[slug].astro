@@ -1,0 +1,37 @@
+---
+import { getCollection, render } from 'astro:content';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { formatDate } from '../../lib/posts';
+import { getSeasonSlug } from '../../lib/seasons';
+
+export async function getStaticPaths() {
+	const seasons = await getCollection('seasons', ({ data }) => !data.draft);
+	return seasons.map((season) => ({
+		params: { slug: getSeasonSlug(season) },
+		props: { season },
+	}));
+}
+
+const { season } = Astro.props;
+const { Content } = await render(season);
+---
+
+<BaseLayout title={season.data.title} description={season.data.description} image={season.data.cover ?? '/assets/covers/essay.jpg'} type="article" publishedTime={season.data.publishDate}>
+	<article class="article-shell season-article">
+		<header class="article-header">
+			<p class="page-kicker">{season.data.year} {season.data.season}</p>
+			<h1>{season.data.title}</h1>
+			<p class="article-description">{season.data.description}</p>
+			<p class="post-meta"><time datetime={season.data.publishDate.toISOString()}>{formatDate(season.data.publishDate)}</time></p>
+			{season.data.cover && (
+				<>
+					<img class="article-cover" src={season.data.cover} alt={season.data.coverAlt ?? ''} loading="eager" width="1600" height="1000" />
+					{season.data.coverAlt && <p class="image-caption">{season.data.coverAlt}</p>}
+				</>
+			)}
+		</header>
+		<div class="prose">
+			<Content />
+		</div>
+	</article>
+</BaseLayout>

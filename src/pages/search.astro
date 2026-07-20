@@ -1,0 +1,107 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+---
+
+<BaseLayout title="搜索" description="搜索博客文章。">
+	<section class="page-shell" aria-labelledby="search-title">
+		<p class="page-kicker">Search</p>
+		<h1 id="search-title" class="page-title">搜索</h1>
+		<form class="search-form" role="search" action="/search/">
+			<label class="sr-only" for="search-input">搜索关键词</label>
+			<input id="search-input" name="q" type="search" placeholder="输入关键词" autocomplete="off" />
+			<button type="submit">搜索</button>
+		</form>
+		<div id="search-results" class="post-list post-list--compact" aria-live="polite"></div>
+	</section>
+	<script>
+		const form = document.querySelector<HTMLFormElement>('.search-form');
+		const input = document.querySelector<HTMLInputElement>('#search-input');
+		const results = document.querySelector<HTMLDivElement>('#search-results');
+		let index: Array<{ title: string; description: string; url: string; tags: string[]; category: string; body: string; readingTime: string }> = [];
+
+		async function loadIndex() {
+			if (index.length === 0) {
+				index = await fetch('/search.json').then((response) => response.json());
+			}
+		}
+
+		function appendText(parent: Element, text: string) {
+			parent.append(document.createTextNode(text));
+		}
+
+		function render(items: typeof index) {
+			if (!results) return;
+			results.replaceChildren();
+			if (items.length === 0) {
+				const empty = document.createElement('p');
+				empty.className = 'page-description';
+				empty.textContent = '没有找到相关文章。';
+				results.append(empty);
+				return;
+			}
+
+			for (const item of items) {
+				const article = document.createElement('article');
+				article.className = 'post-entry';
+				const content = document.createElement('div');
+				content.className = 'post-entry__content';
+				const meta = document.createElement('div');
+				meta.className = 'post-meta';
+
+				for (const tag of item.tags) {
+					const span = document.createElement('span');
+					appendText(span, `#${tag}`);
+					meta.append(span);
+				}
+				const time = document.createElement('span');
+				time.textContent = item.readingTime;
+				meta.append(time);
+
+				const heading = document.createElement('h2');
+				const link = document.createElement('a');
+				link.href = item.url;
+				link.textContent = item.title;
+				heading.append(link);
+
+				const description = document.createElement('p');
+				description.textContent = item.description;
+
+				content.append(meta, heading, description);
+				article.append(content);
+				results.append(article);
+			}
+		}
+
+		async function runSearch(query: string) {
+			await loadIndex();
+			const normalized = query.trim().toLowerCase();
+			if (!normalized) {
+				results?.replaceChildren();
+				return;
+			}
+			render(
+				index.filter((item) =>
+					[item.title, item.description, item.category, item.body, item.tags.join(' ')]
+						.join(' ')
+						.toLowerCase()
+						.includes(normalized),
+				),
+			);
+		}
+
+		form?.addEventListener('submit', async (event) => {
+			event.preventDefault();
+			await runSearch(input?.value ?? '');
+		});
+
+		input?.addEventListener('input', () => {
+			void runSearch(input.value);
+		});
+
+		const initialQuery = new URLSearchParams(window.location.search).get('q');
+		if (initialQuery && input) {
+			input.value = initialQuery;
+			void runSearch(initialQuery);
+		}
+	</script>
+</BaseLayout>

@@ -1,0 +1,71 @@
+---
+import type { MarkdownHeading } from 'astro';
+import type { BlogPost } from '../lib/posts';
+import BaseLayout from './BaseLayout.astro';
+import PostMeta from '../components/PostMeta.astro';
+import PostList from '../components/PostList.astro';
+import { categoryMap, getPostUrl } from '../lib/posts';
+
+interface Props {
+	post: BlogPost;
+	headings: MarkdownHeading[];
+	readingTime: string;
+	prev?: BlogPost;
+	next?: BlogPost;
+	related: BlogPost[];
+}
+
+const { post, headings, readingTime, prev, next, related } = Astro.props;
+const toc = headings.filter((heading) => heading.depth > 1 && heading.depth < 4);
+const category = categoryMap[post.data.category];
+---
+
+<BaseLayout
+	title={post.data.title}
+	description={post.data.description}
+	image={post.data.cover}
+	type="article"
+	publishedTime={post.data.publishDate}
+	updatedTime={post.data.updatedDate}
+	tags={post.data.tags}
+>
+	<article class="article-shell" data-category={post.data.category}>
+		<header class="article-header">
+			<a class="article-category-link" href={category.href}>{category.label} · {category.tone}</a>
+			<PostMeta post={post} readingTime={readingTime} />
+			<h1>{post.data.title}</h1>
+			<p class="article-description">{post.data.description}</p>
+			<img class="article-cover" src={post.data.cover} alt={post.data.coverAlt} loading="eager" width="1600" height="1000" />
+			{post.data.coverAlt && <p class="image-caption">{post.data.coverAlt}</p>}
+		</header>
+
+		{toc.length > 0 && (
+			<nav class="toc" aria-label="文章目录">
+				<h2>目录</h2>
+				<ol>
+					{toc.map((heading) => (
+						<li class={`toc-depth-${heading.depth}`}>
+							<a href={`#${heading.slug}`}>{heading.text}</a>
+						</li>
+					))}
+				</ol>
+			</nav>
+		)}
+
+		<div class="prose">
+			<slot />
+		</div>
+
+		<nav class="post-neighbors" aria-label="上一篇和下一篇">
+			{prev ? <a href={getPostUrl(prev)} rel="prev">上一篇：{prev.data.title}</a> : <span />}
+			{next ? <a href={getPostUrl(next)} rel="next">下一篇：{next.data.title}</a> : <span />}
+		</nav>
+
+		{related.length > 0 && (
+			<section class="related-section" aria-labelledby="related-title">
+				<h2 id="related-title">相关文章</h2>
+				<PostList posts={related} compact />
+			</section>
+		)}
+	</article>
+</BaseLayout>
