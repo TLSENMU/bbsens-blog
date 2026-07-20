@@ -166,13 +166,15 @@ input {
 }
 
 body:has(.home-hero-full) .site-header {
-	position: absolute;
+	position: sticky;
 	left: 0;
 	right: 0;
+	top: 0;
 	border-bottom-color: rgb(255 255 255 / 0.18);
 	background: linear-gradient(180deg, rgb(13 18 24 / 0.62), rgb(13 18 24 / 0.22) 62%, transparent);
 	color: #f7f2e8;
 	backdrop-filter: none;
+	margin-bottom: -73px;
 }
 
 body:has(.home-hero-full) .site-brand,
@@ -985,12 +987,13 @@ body:has(.home-hero-full) .mobile-menu[open] nav {
 }
 
 .home-hero-statement h1 {
-	max-width: 900px;
+	max-width: 980px;
 	margin: 0;
 	font-family: var(--font-serif-cn);
-	font-size: clamp(2.25rem, 5.4vw, 4.85rem);
+	font-size: clamp(2.1rem, 3.9vw, 3.55rem);
 	font-weight: 700;
-	line-height: 1.08;
+	line-height: 1.14;
+	text-wrap: balance;
 }
 
 .home-hero-stacked {
@@ -1435,7 +1438,9 @@ body:has(.home-hero-full) .mobile-menu[open] nav {
 	}
 
 	.home-hero-statement h1 {
-		font-size: clamp(2.1rem, 10.2vw, 3.2rem);
+		max-width: 11.5em;
+		font-size: clamp(1.85rem, 8.2vw, 2.45rem);
+		line-height: 1.18;
 	}
 
 	.home-hero-stacked img {
