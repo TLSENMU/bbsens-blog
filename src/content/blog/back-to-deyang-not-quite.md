@@ -6,7 +6,7 @@ tags: ["在路上", "德阳", "日常"]
 cover: "/assets/covers/travel.jpg"
 coverAlt: "占位封面：路途与城市气氛图片"
 category: "journey"
-draft: true
+draft: false
 featured: false
 location: "德阳"
 language: "zh"

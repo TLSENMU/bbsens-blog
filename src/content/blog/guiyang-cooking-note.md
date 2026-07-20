@@ -6,7 +6,7 @@ tags: ["食", "贵阳", "学厨"]
 cover: "/assets/covers/daily.jpg"
 coverAlt: "占位封面：餐桌和生活气氛图片"
 category: "food"
-draft: true
+draft: false
 featured: false
 location: "贵阳"
 language: "zh"
