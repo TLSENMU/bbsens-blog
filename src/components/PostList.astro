@@ -1,7 +1,7 @@
 ---
 import type { BlogPost } from '../lib/posts';
 import PostMeta from './PostMeta.astro';
-import { estimateReadingTime, getPostUrl } from '../lib/posts';
+import { estimateReadingTime, getCoverLayout, getPostUrl } from '../lib/posts';
 
 interface Props {
 	posts: BlogPost[];
@@ -13,15 +13,22 @@ const { posts, compact = false } = Astro.props;
 
 <div class:list={['post-list', compact && 'post-list--compact']}>
 	{posts.map((post) => (
-		<article class="post-entry" data-category={post.data.category}>
+		<article class:list={['post-entry', !post.data.cover && 'post-entry--no-cover']} data-category={post.data.category} data-cover-layout={getCoverLayout(post)}>
 			<div class="post-entry__content">
 				<PostMeta post={post} readingTime={estimateReadingTime(post.body)} />
 				<h2><a href={getPostUrl(post)}>{post.data.title}</a></h2>
 				<p>{post.data.description}</p>
 			</div>
-			{!compact && (
+			{!compact && post.data.cover && (
 				<a class="post-entry__cover" href={getPostUrl(post)} aria-label={`阅读 ${post.data.title}`}>
-					<img src={post.data.cover} alt={post.data.coverAlt} loading="lazy" width="1600" height="1000" />
+					<img
+						src={post.data.cover}
+						alt={post.data.coverAlt ?? ''}
+						loading="lazy"
+						width="1600"
+						height="1000"
+						style={`object-position: ${post.data.coverPosition ?? '50% 50%'}`}
+					/>
 				</a>
 			)}
 		</article>

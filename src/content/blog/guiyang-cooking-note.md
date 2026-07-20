@@ -5,8 +5,11 @@ publishDate: 2026-07-20
 tags: ["食", "贵阳", "学厨"]
 cover: "/assets/covers/daily.jpg"
 coverAlt: "占位封面：餐桌和生活气氛图片"
+coverLayout: "standard"
+coverPosition: "50% 48%"
 category: "food"
 draft: false
+unlisted: false
 featured: false
 location: "贵阳"
 language: "zh"

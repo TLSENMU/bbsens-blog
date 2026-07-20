@@ -6,8 +6,11 @@ updatedDate: 2026-05-20
 tags: ["食", "小店", "晚餐"]
 cover: "/assets/covers/daily.jpg"
 coverAlt: "占位封面：暖白与绿色交织的餐桌气氛图片"
+coverLayout: "landscape"
+coverPosition: "50% 48%"
 category: "food"
 draft: false
+unlisted: false
 featured: true
 location: "A Small Restaurant"
 language: "zh"

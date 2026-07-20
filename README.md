@@ -54,7 +54,10 @@ publishDate: 2026-07-20
 tags: ["travel", "daily"]
 cover: "/assets/covers/example.jpg"
 coverAlt: "图片说明"
+coverLayout: "standard"
+coverPosition: "50% 50%"
 draft: false
+unlisted: false
 ---
 ```
 
@@ -64,8 +67,15 @@ Optional fields:
 - `featured`
 - `location`
 - `language`
+- `coverLayout`: `landscape`, `standard`, `portrait`, or `wide`
+- `coverPosition`: CSS `object-position`, for example `50% 42%`
+- `unlisted`: hide from public lists while still building the post URL
 
 Set `draft: true` to keep a post out of production pages.
+
+Set `unlisted: true` when a post should still build and remain accessible by full URL, but should not appear on the homepage, category pages, archive, tags, search, RSS, sitemap, related posts, previous/next navigation, or public article counts.
+
+`unlisted` is not security or password protection. Anyone with the URL can still read the page, so sensitive content should not be deployed.
 
 ## Site URL
 
@@ -84,7 +94,7 @@ This value is used by Astro config, canonical URLs, Open Graph images, RSS, robo
 - Section accents: mist blue for `在路上`, soft clay apricot for `食`, muted olive for `物与人`.
 - Typography: Chinese serif stack for titles/body, English serif stack for English headings, sans-serif for navigation, tags, dates, and controls.
 - Layout: homepage remains an article list, not a masonry card grid.
-- JavaScript: limited to theme switching and static search.
+- JavaScript: limited to theme switching, static search, article reading progress, and article image lightbox.
 - Homepage structure: hero, seasonal letter, seasonal picks, recent updates, and a quiet selected-images strip.
 
 ## Push to GitHub

@@ -1,6 +1,8 @@
+import { getCollection } from 'astro:content';
 import type { CollectionEntry } from 'astro:content';
 
 export type BlogPost = CollectionEntry<'blog'>;
+export type CoverLayout = NonNullable<BlogPost['data']['coverLayout']>;
 
 export const categoryMap = {
 	journey: {
@@ -41,10 +43,33 @@ export function getPostUrl(post: BlogPost) {
 	return `/blog/${getPostSlug(post)}/`;
 }
 
-export function sortPosts(posts: BlogPost[]) {
+export function sortPostsByDate(posts: BlogPost[]) {
 	return [...posts].sort(
 		(a, b) => b.data.publishDate.getTime() - a.data.publishDate.getTime(),
 	);
+}
+
+export const sortPosts = sortPostsByDate;
+
+export function isPublishedPost(post: BlogPost) {
+	return !post.data.draft;
+}
+
+export function isPublicPost(post: BlogPost) {
+	return isPublishedPost(post) && !post.data.unlisted;
+}
+
+export async function getPublishedPosts() {
+	return sortPostsByDate(await getCollection('blog', isPublishedPost));
+}
+
+export async function getPublicPosts() {
+	return sortPostsByDate(await getCollection('blog', isPublicPost));
+}
+
+export async function getUnlistedPostBySlug(slug: string) {
+	const posts = await getCollection('blog', (post) => isPublishedPost(post) && post.data.unlisted);
+	return posts.find((post) => getPostSlug(post) === slug);
 }
 
 export function formatDate(date: Date, locale = 'zh-CN') {
@@ -53,6 +78,12 @@ export function formatDate(date: Date, locale = 'zh-CN') {
 		month: 'long',
 		day: 'numeric',
 	}).format(date);
+}
+
+export function getWritingSeason(date: Date) {
+	const month = date.getMonth() + 1;
+	const season = month <= 2 || month === 12 ? '冬' : month <= 5 ? '春' : month <= 8 ? '夏' : '秋';
+	return `${date.getFullYear()} 年${season}季`;
 }
 
 export function estimateReadingTime(text = '') {
@@ -81,11 +112,11 @@ export function getAllTags(posts: BlogPost[]) {
 }
 
 export function getPostsByCategory(posts: BlogPost[], category: keyof typeof categoryMap) {
-	return sortPosts(posts).filter((post) => post.data.category === category);
+	return sortPostsByDate(posts).filter((post) => post.data.category === category);
 }
 
 export function getAdjacentPosts(posts: BlogPost[], post: BlogPost) {
-	const sorted = sortPosts(posts);
+	const sorted = sortPostsByDate(posts).filter((item) => isPublicPost(item));
 	const index = sorted.findIndex((item) => item.id === post.id);
 	return {
 		next: index > 0 ? sorted[index - 1] : undefined,
@@ -95,14 +126,18 @@ export function getAdjacentPosts(posts: BlogPost[], post: BlogPost) {
 
 export function getRelatedPosts(posts: BlogPost[], post: BlogPost) {
 	const tags = new Set(post.data.tags);
-	return sortPosts(posts)
-		.filter((item) => item.id !== post.id)
+	return sortPostsByDate(posts)
+		.filter((item) => item.id !== post.id && isPublicPost(item))
 		.map((item) => ({
 			post: item,
 			score: item.data.tags.filter((tag) => tags.has(tag)).length,
 		}))
 		.filter((item) => item.score > 0)
 		.sort((a, b) => b.score - a.score)
-		.slice(0, 3)
+		.slice(0, 2)
 		.map((item) => item.post);
+}
+
+export function getCoverLayout(post: BlogPost): CoverLayout {
+	return post.data.coverLayout ?? 'standard';
 }

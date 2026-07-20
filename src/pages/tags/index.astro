@@ -1,9 +1,8 @@
 ---
-import { getCollection } from 'astro:content';
 import BaseLayout from '../../layouts/BaseLayout.astro';
-import { getAllTags, slugifyTag, sortPosts } from '../../lib/posts';
+import { getAllTags, getPublicPosts, slugifyTag } from '../../lib/posts';
 
-const posts = sortPosts(await getCollection('blog', ({ data }) => !data.draft));
+const posts = await getPublicPosts();
 const tags = getAllTags(posts);
 ---
 

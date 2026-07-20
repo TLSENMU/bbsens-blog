@@ -2,10 +2,10 @@
 import { getCollection } from 'astro:content';
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import PostMeta from '../../components/PostMeta.astro';
-import { categoryMap, estimateReadingTime, getPostsByCategory, getPostUrl, sortPosts } from '../../lib/posts';
+import { categoryMap, estimateReadingTime, getPostsByCategory, getPostUrl, getPublicPosts } from '../../lib/posts';
 import { getSeasonUrl, sortSeasons } from '../../lib/seasons';
 
-const posts = sortPosts(await getCollection('blog', ({ data }) => !data.draft));
+const posts = await getPublicPosts();
 const seasons = sortSeasons(await getCollection('seasons', ({ data }) => !data.draft));
 const latestSeason = seasons[0];
 const categoryEntries = Object.entries(categoryMap).map(([key, category]) => ({

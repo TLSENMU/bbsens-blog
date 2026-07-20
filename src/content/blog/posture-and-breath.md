@@ -5,8 +5,11 @@ publishDate: 2026-07-20
 tags: ["思绪", "身体", "呼吸"]
 cover: "/assets/covers/essay.jpg"
 coverAlt: "占位封面：纸页、光线和安静室内气氛图片"
+coverLayout: "portrait"
+coverPosition: "50% 50%"
 category: "thoughts"
 draft: false
+unlisted: false
 featured: false
 language: "zh"
 ---

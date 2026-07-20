@@ -1,11 +1,10 @@
 ---
-import { getCollection } from 'astro:content';
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import PostList from '../../components/PostList.astro';
-import { getAllTags, slugifyTag, sortPosts } from '../../lib/posts';
+import { getAllTags, getPublicPosts, slugifyTag, sortPostsByDate } from '../../lib/posts';
 
 export async function getStaticPaths() {
-	const posts = sortPosts(await getCollection('blog', ({ data }) => !data.draft));
+	const posts = await getPublicPosts();
 	return getAllTags(posts).map(([tag]) => ({
 		params: { tag: slugifyTag(tag) },
 		props: { tag },
@@ -13,9 +12,7 @@ export async function getStaticPaths() {
 }
 
 const { tag } = Astro.props;
-const posts = sortPosts(
-	(await getCollection('blog', ({ data }) => !data.draft)).filter((post) => post.data.tags.includes(tag)),
-);
+const posts = sortPostsByDate((await getPublicPosts()).filter((post) => post.data.tags.includes(tag)));
 ---
 
 <BaseLayout title={`标签：${tag}`} description={`浏览标签 ${tag} 下的文章。`}>

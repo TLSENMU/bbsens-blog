@@ -1,10 +1,9 @@
 import rss from '@astrojs/rss';
-import { getCollection } from 'astro:content';
 import { siteConfig } from '../lib/site';
-import { getPostUrl, sortPosts } from '../lib/posts';
+import { getPostUrl, getPublicPosts } from '../lib/posts';
 
 export async function GET() {
-	const posts = sortPosts(await getCollection('blog', ({ data }) => !data.draft));
+	const posts = await getPublicPosts();
 	return rss({
 		title: `${siteConfig.siteTitle}｜${siteConfig.siteSubtitle}`,
 		description: siteConfig.siteDescription,

@@ -5,8 +5,11 @@ publishDate: 2026-02-18
 tags: ["思绪", "夜里", "随想"]
 cover: "/assets/covers/essay.jpg"
 coverAlt: "占位封面：夜色里带一点雾霭蓝的纸页气氛"
+coverLayout: "standard"
+coverPosition: "50% 50%"
 category: "thoughts"
 draft: false
+unlisted: false
 featured: true
 language: "zh"
 ---

@@ -1,8 +1,7 @@
-import { getCollection } from 'astro:content';
-import { estimateReadingTime, getPostUrl, sortPosts } from '../lib/posts';
+import { estimateReadingTime, getPostUrl, getPublicPosts } from '../lib/posts';
 
 export async function GET() {
-	const posts = sortPosts(await getCollection('blog', ({ data }) => !data.draft));
+	const posts = await getPublicPosts();
 	return new Response(
 		JSON.stringify(
 			posts.map((post) => ({

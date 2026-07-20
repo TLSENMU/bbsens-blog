@@ -1,16 +1,17 @@
 ---
-import { getCollection, render } from 'astro:content';
+import { render } from 'astro:content';
 import BlogPostLayout from '../../layouts/BlogPostLayout.astro';
 import {
 	estimateReadingTime,
 	getAdjacentPosts,
+	getPublishedPosts,
 	getPostSlug,
+	getPublicPosts,
 	getRelatedPosts,
-	sortPosts,
 } from '../../lib/posts';
 
 export async function getStaticPaths() {
-	const posts = await getCollection('blog', ({ data }) => !data.draft);
+	const posts = await getPublishedPosts();
 	return posts.map((post) => ({
 		params: { slug: getPostSlug(post) },
 		props: { post },
@@ -18,10 +19,10 @@ export async function getStaticPaths() {
 }
 
 const { post } = Astro.props;
-const posts = sortPosts(await getCollection('blog', ({ data }) => !data.draft));
+const posts = await getPublicPosts();
 const { Content, headings } = await render(post);
-const { prev, next } = getAdjacentPosts(posts, post);
-const related = getRelatedPosts(posts, post);
+const { prev, next } = post.data.unlisted ? { prev: undefined, next: undefined } : getAdjacentPosts(posts, post);
+const related = post.data.unlisted ? [] : getRelatedPosts(posts, post);
 const readingTime = estimateReadingTime(post.body);
 ---
 

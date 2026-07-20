@@ -5,8 +5,11 @@ publishDate: 2026-06-22
 tags: ["在路上", "新疆", "旅途"]
 cover: "/assets/covers/travel.jpg"
 coverAlt: "占位封面：柔和山谷色调的路途图片"
+coverLayout: "wide"
+coverPosition: "50% 52%"
 category: "journey"
 draft: false
+unlisted: false
 featured: true
 location: "Xinjiang"
 language: "zh"

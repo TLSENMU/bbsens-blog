@@ -5,16 +5,17 @@ import { categoryMap, formatDate, slugifyTag } from '../lib/posts';
 interface Props {
 	post: BlogPost;
 	readingTime?: string;
+	variant?: 'list' | 'article';
 }
 
-const { post, readingTime } = Astro.props;
+const { post, readingTime, variant = 'list' } = Astro.props;
 const category = categoryMap[post.data.category];
 ---
 
-<div class="post-meta">
-	<a class="post-meta__category" href={category.href}>{category.label}</a>
+<div class:list={['post-meta', variant === 'article' && 'post-meta--article']}>
 	<time datetime={post.data.publishDate.toISOString()}>{formatDate(post.data.publishDate)}</time>
-	{post.data.location && <span>{post.data.location}</span>}
-	{post.data.tags.map((tag) => <a href={`/tags/${slugifyTag(tag)}/`}>#{tag}</a>)}
+	<a class="post-meta__category" href={category.href}>{category.label}</a>
+	{variant === 'list' && post.data.location && <span>{post.data.location}</span>}
+	{variant === 'list' && post.data.tags.map((tag) => <a href={`/tags/${slugifyTag(tag)}/`}>#{tag}</a>)}
 	{readingTime && <span>{readingTime}</span>}
 </div>

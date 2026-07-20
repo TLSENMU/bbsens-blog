@@ -1,0 +1,39 @@
+<div class="reading-progress" aria-hidden="true">
+	<span data-reading-progress></span>
+</div>
+
+<script>
+	const progressBar = document.querySelector<HTMLElement>('[data-reading-progress]');
+	const progressRoot = document.querySelector<HTMLElement>('.prose');
+	let progressFrame = 0;
+
+	function clamp(value: number) {
+		return Math.min(1, Math.max(0, value));
+	}
+
+	function updateReadingProgress() {
+		progressFrame = 0;
+		if (!progressBar || !progressRoot) return;
+
+		const rect = progressRoot.getBoundingClientRect();
+		const start = window.scrollY + rect.top;
+		const end = start + progressRoot.offsetHeight - window.innerHeight;
+		const progress = end <= start ? (window.scrollY >= start ? 1 : 0) : clamp((window.scrollY - start) / (end - start));
+		progressBar.style.transform = `scaleX(${progress})`;
+	}
+
+	function requestProgressUpdate() {
+		if (progressFrame) return;
+		progressFrame = window.requestAnimationFrame(updateReadingProgress);
+	}
+
+	updateReadingProgress();
+	window.addEventListener('scroll', requestProgressUpdate, { passive: true });
+	window.addEventListener('resize', requestProgressUpdate);
+	window.addEventListener('load', requestProgressUpdate, { once: true });
+	document.addEventListener('astro:before-swap', () => {
+		window.removeEventListener('scroll', requestProgressUpdate);
+		window.removeEventListener('resize', requestProgressUpdate);
+		if (progressFrame) window.cancelAnimationFrame(progressFrame);
+	});
+</script>

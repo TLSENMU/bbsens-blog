@@ -3,14 +3,15 @@ import { getCollection } from 'astro:content';
 import BaseLayout from '../layouts/BaseLayout.astro';
 import PostMeta from '../components/PostMeta.astro';
 import { siteConfig } from '../config';
-import { categoryMap, estimateReadingTime, getPostUrl, sortPosts } from '../lib/posts';
+import { categoryMap, estimateReadingTime, getPostUrl, getPublicPosts } from '../lib/posts';
 import { getSeasonUrl, sortSeasons } from '../lib/seasons';
 
-const posts = sortPosts(await getCollection('blog', ({ data }) => !data.draft));
+const posts = await getPublicPosts();
 const seasons = sortSeasons(await getCollection('seasons', ({ data }) => !data.draft));
 const latestSeason = seasons[0];
 
-const seasonalPicks = (Object.keys(categoryMap) as Array<keyof typeof categoryMap>)
+const seasonalPickCategories: Array<keyof typeof categoryMap> = ['journey', 'food', 'people'];
+const seasonalPicks = seasonalPickCategories
 	.map((category) => posts.find((post) => post.data.category === category && post.data.featured))
 	.filter(Boolean);
 

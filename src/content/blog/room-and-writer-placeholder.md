@@ -5,8 +5,11 @@ publishDate: 2026-03-12
 tags: ["设计", "作家", "房间", "物与人"]
 cover: "/assets/covers/notes.jpg"
 coverAlt: "占位封面：冷暖交错的房间与纸页气氛"
+coverLayout: "standard"
+coverPosition: "50% 50%"
 category: "people"
 draft: false
+unlisted: false
 language: "zh"
 ---
 

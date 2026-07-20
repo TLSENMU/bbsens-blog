@@ -5,8 +5,11 @@ publishDate: 2026-04-08
 tags: ["朋友", "日常", "物与人"]
 cover: "/assets/covers/essay.jpg"
 coverAlt: "占位封面：傍晚城市与笔记色调"
+coverLayout: "portrait"
+coverPosition: "50% 50%"
 category: "people"
 draft: false
+unlisted: false
 featured: true
 language: "zh"
 ---

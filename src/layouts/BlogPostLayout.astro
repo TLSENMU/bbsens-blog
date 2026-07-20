@@ -3,8 +3,9 @@ import type { MarkdownHeading } from 'astro';
 import type { BlogPost } from '../lib/posts';
 import BaseLayout from './BaseLayout.astro';
 import PostMeta from '../components/PostMeta.astro';
-import PostList from '../components/PostList.astro';
-import { categoryMap, getPostUrl } from '../lib/posts';
+import ReadingProgress from '../components/ReadingProgress.astro';
+import ImageLightbox from '../components/ImageLightbox.astro';
+import { getCoverLayout, getPostUrl, getWritingSeason } from '../lib/posts';
 
 interface Props {
 	post: BlogPost;
@@ -17,7 +18,8 @@ interface Props {
 
 const { post, headings, readingTime, prev, next, related } = Astro.props;
 const toc = headings.filter((heading) => heading.depth > 1 && heading.depth < 4);
-const category = categoryMap[post.data.category];
+const writtenAt = `写于 ${getWritingSeason(post.data.publishDate)}${post.data.location ? ` · ${post.data.location}` : ''}`;
+const cleanHeadingText = (text: string) => text.replace(/#$/, '').trim();
 ---
 
 <BaseLayout
@@ -29,14 +31,26 @@ const category = categoryMap[post.data.category];
 	updatedTime={post.data.updatedDate}
 	tags={post.data.tags}
 >
-	<article class="article-shell" data-category={post.data.category}>
+	<ReadingProgress />
+	<article class="article-shell" data-category={post.data.category} data-cover-layout={getCoverLayout(post)}>
 		<header class="article-header">
-			<a class="article-category-link" href={category.href}>{category.label} · {category.tone}</a>
-			<PostMeta post={post} readingTime={readingTime} />
 			<h1>{post.data.title}</h1>
+			<PostMeta post={post} readingTime={readingTime} variant="article" />
 			<p class="article-description">{post.data.description}</p>
-			<img class="article-cover" src={post.data.cover} alt={post.data.coverAlt} loading="eager" width="1600" height="1000" />
-			{post.data.coverAlt && <p class="image-caption">{post.data.coverAlt}</p>}
+			{post.data.cover && (
+				<figure class="article-cover-frame">
+					<img
+						class="article-cover"
+						src={post.data.cover}
+						alt={post.data.coverAlt ?? ''}
+						loading="eager"
+						width="1600"
+						height="1000"
+						style={`object-position: ${post.data.coverPosition ?? '50% 50%'}`}
+					/>
+					{post.data.coverAlt && <figcaption class="image-caption">{post.data.coverAlt}</figcaption>}
+				</figure>
+			)}
 		</header>
 
 		{toc.length > 0 && (
@@ -45,7 +59,7 @@ const category = categoryMap[post.data.category];
 				<ol>
 					{toc.map((heading) => (
 						<li class={`toc-depth-${heading.depth}`}>
-							<a href={`#${heading.slug}`}>{heading.text}</a>
+							<a href={`#${heading.slug}`}>{cleanHeadingText(heading.text)}</a>
 						</li>
 					))}
 				</ol>
@@ -56,6 +70,10 @@ const category = categoryMap[post.data.category];
 			<slot />
 		</div>
 
+		<footer class="article-ending">
+			<p>{writtenAt}</p>
+		</footer>
+
 		<nav class="post-neighbors" aria-label="上一篇和下一篇">
 			{prev ? <a href={getPostUrl(prev)} rel="prev">上一篇：{prev.data.title}</a> : <span />}
 			{next ? <a href={getPostUrl(next)} rel="next">下一篇：{next.data.title}</a> : <span />}
@@ -64,8 +82,11 @@ const category = categoryMap[post.data.category];
 		{related.length > 0 && (
 			<section class="related-section" aria-labelledby="related-title">
 				<h2 id="related-title">相关文章</h2>
-				<PostList posts={related} compact />
+				<ul>
+					{related.map((item) => <li><a href={getPostUrl(item)}>{item.data.title}</a></li>)}
+				</ul>
 			</section>
 		)}
 	</article>
+	<ImageLightbox />
 </BaseLayout>
