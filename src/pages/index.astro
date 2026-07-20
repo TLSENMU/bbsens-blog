@@ -38,19 +38,15 @@ const quietImages = [
 ---
 
 <BaseLayout>
+	<section class="home-hero-full" aria-label="首页封面">
+		<img src="/assets/covers/home-hero-fuji.webp" alt="冬季本栖湖对岸的富士山、湖面与星轨" loading="eager" width="1600" height="900" />
+	</section>
+
 	<section class="home-preview-shell" aria-labelledby="home-title">
-		<div class="home-hero-stacked">
-			<figure>
-				<img src="/assets/covers/home-hero-fuji.webp" alt="冬季本栖湖对岸的富士山、湖面与星轨" loading="eager" width="1600" height="900" />
-			</figure>
-			<div class="home-hero-copy">
-				<div>
-					<p class="page-kicker">Road / Table / People</p>
-					<h1 id="home-title">写路上、餐桌，以及念念不忘的物与人。</h1>
-				</div>
-				<p>{siteConfig.siteDescription}</p>
-			</div>
-		</div>
+		<header class="home-hero-statement">
+			<p class="page-kicker">Road / Table / People</p>
+			<h1 id="home-title">{siteConfig.siteDescription}</h1>
+		</header>
 
 		{latestSeason && (
 			<section class="season-feature" aria-labelledby="season-feature-title">
