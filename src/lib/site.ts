@@ -1,1 +1,1 @@
-export { siteConfig } from '../../site.config.mjs';
+export { siteConfig } from '../config';

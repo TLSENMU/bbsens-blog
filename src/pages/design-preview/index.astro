@@ -1,5 +1,6 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro';
+import { siteConfig } from '../../config';
 
 const samplePosts = [
 	{
@@ -50,6 +51,66 @@ const schemes = [
 		<p class="page-description">
 			这页只用于比较候选设计。A、B、C 使用同一组示例文章和封面图片；在你选择前，三套方案都会保留。
 		</p>
+
+		<section class="brand-preview" aria-labelledby="brand-preview-title">
+			<div class="scheme-heading">
+				<div>
+					<p class="scheme-label">Header Preview</p>
+					<h2 id="brand-preview-title">页头品牌排列</h2>
+				</div>
+				<p>两种方案只比较站名区域。导航文字保持： 首页 / 在路上 / 食 / 物与人 / 关于我。</p>
+			</div>
+
+			<div class="brand-preview-grid">
+				<section class="brand-card" aria-labelledby="brand-a-title">
+					<div>
+						<p class="scheme-label">方案 A</p>
+						<h3 id="brand-a-title">副名置于下方</h3>
+					</div>
+					<div class="brand-browser">
+						<a class="site-brand site-brand--stacked" href="/" aria-label={`${siteConfig.siteTitle}，${siteConfig.siteSubtitle}，返回首页`}>
+							<span class="site-brand__title">{siteConfig.siteTitle}</span>
+							<span class="site-brand__subtitle">{siteConfig.siteSubtitle}</span>
+						</a>
+						<nav aria-label="方案 A 导航">
+							{siteConfig.nav.map((item) => <span>{item.label}</span>)}
+						</nav>
+					</div>
+					<div class="brand-phone">
+						<a class="site-brand site-brand--stacked" href="/" aria-label={`${siteConfig.siteTitle}，${siteConfig.siteSubtitle}，返回首页`}>
+							<span class="site-brand__title">{siteConfig.siteTitle}</span>
+							<span class="site-brand__subtitle">{siteConfig.siteSubtitle}</span>
+						</a>
+						<span class="brand-menu-lines"><i></i><i></i><i></i></span>
+					</div>
+				</section>
+
+				<section class="brand-card" aria-labelledby="brand-b-title">
+					<div>
+						<p class="scheme-label">方案 B</p>
+						<h3 id="brand-b-title">同一行组合</h3>
+					</div>
+					<div class="brand-browser">
+						<a class="site-brand site-brand--inline" href="/" aria-label={`${siteConfig.siteTitle}，${siteConfig.siteSubtitle}，返回首页`}>
+							<span class="site-brand__title">{siteConfig.siteTitle}</span>
+							<span class="site-brand__dot" aria-hidden="true">·</span>
+							<span class="site-brand__subtitle">{siteConfig.siteSubtitle}</span>
+						</a>
+						<nav aria-label="方案 B 导航">
+							{siteConfig.nav.map((item) => <span>{item.label}</span>)}
+						</nav>
+					</div>
+					<div class="brand-phone">
+						<a class="site-brand site-brand--inline" href="/" aria-label={`${siteConfig.siteTitle}，${siteConfig.siteSubtitle}，返回首页`}>
+							<span class="site-brand__title">{siteConfig.siteTitle}</span>
+							<span class="site-brand__dot" aria-hidden="true">·</span>
+							<span class="site-brand__subtitle">{siteConfig.siteSubtitle}</span>
+						</a>
+						<span class="brand-menu-lines"><i></i><i></i><i></i></span>
+					</div>
+				</section>
+			</div>
+		</section>
 
 		<div class="scheme-list">
 			{schemes.map((scheme) => (
@@ -137,6 +198,87 @@ const schemes = [
 	<style>
 		.design-preview {
 			--preview-gap: clamp(20px, 4vw, 36px);
+		}
+
+		.brand-preview {
+			margin: clamp(2rem, 5vw, 3.5rem) 0 clamp(3rem, 7vw, 5rem);
+			padding: clamp(1.2rem, 3vw, 1.6rem) 0 clamp(2rem, 5vw, 3rem);
+			border-block: 1px solid var(--color-line);
+		}
+
+		.brand-preview-grid {
+			display: grid;
+			grid-template-columns: repeat(2, minmax(0, 1fr));
+			gap: clamp(1rem, 3vw, 1.5rem);
+		}
+
+		.brand-card {
+			display: grid;
+			gap: 1rem;
+		}
+
+		.brand-card h3 {
+			margin: 0.2rem 0 0;
+			font-size: clamp(1.25rem, 2vw, 1.6rem);
+			line-height: 1.25;
+		}
+
+		.brand-browser,
+		.brand-phone {
+			display: flex;
+			align-items: center;
+			justify-content: space-between;
+			gap: 1rem;
+			border: 1px solid var(--color-line);
+			background: var(--color-bg-soft);
+		}
+
+		.brand-browser {
+			min-height: 82px;
+			padding: 1rem 1.2rem;
+			border-radius: 10px;
+		}
+
+		.brand-browser nav {
+			display: flex;
+			align-items: center;
+			gap: 1rem;
+			color: var(--color-muted);
+			font-family: var(--font-sans);
+			font-size: 0.84rem;
+		}
+
+		.brand-phone {
+			width: min(100%, 320px);
+			min-height: 70px;
+			padding: 0.85rem 1rem;
+			border-radius: 20px;
+		}
+
+		.brand-phone .site-brand__title {
+			font-size: 1.45rem;
+		}
+
+		.brand-phone .site-brand__subtitle {
+			font-size: 0.74rem;
+		}
+
+		.brand-phone .site-brand--inline {
+			gap: 0.35rem;
+		}
+
+		.brand-menu-lines {
+			display: grid;
+			gap: 5px;
+			min-width: 36px;
+			justify-items: end;
+		}
+
+		.brand-menu-lines i {
+			display: block;
+			width: 20px;
+			height: 1.5px;
+			background: var(--color-muted);
 		}
 
 		.scheme-list {
@@ -449,6 +591,7 @@ const schemes = [
 
 		@media (max-width: 980px) {
 			.scheme-heading,
+			.brand-preview-grid,
 			.preview-grid {
 				grid-template-columns: 1fr;
 			}

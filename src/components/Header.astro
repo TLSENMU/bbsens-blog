@@ -12,7 +12,10 @@ function isCurrent(href: string) {
 
 <header class="site-header">
 	<div class="site-header__inner">
-		<a class="site-title" href="/">{siteConfig.name}</a>
+		<a class="site-brand site-brand--stacked" href="/" aria-label={`${siteConfig.siteTitle}，${siteConfig.siteSubtitle}，返回首页`}>
+			<span class="site-brand__title">{siteConfig.siteTitle}</span>
+			<span class="site-brand__subtitle">{siteConfig.siteSubtitle}</span>
+		</a>
 		<nav class="desktop-nav" aria-label="主导航">
 			{siteConfig.nav.map((item) => <a href={item.href} aria-current={isCurrent(item.href) ? 'page' : undefined}>{item.label}</a>)}
 		</nav>

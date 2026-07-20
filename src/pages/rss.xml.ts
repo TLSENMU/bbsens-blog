@@ -3,12 +3,12 @@ import { getCollection } from 'astro:content';
 import { siteConfig } from '../lib/site';
 import { getPostUrl, sortPosts } from '../lib/posts';
 
-export async function GET(context: { site: URL }) {
+export async function GET() {
 	const posts = sortPosts(await getCollection('blog', ({ data }) => !data.draft));
 	return rss({
-		title: siteConfig.name,
-		description: siteConfig.description,
-		site: context.site,
+		title: `${siteConfig.siteTitle}｜${siteConfig.siteSubtitle}`,
+		description: siteConfig.siteDescription,
+		site: siteConfig.siteUrl,
 		items: posts.map((post) => ({
 			title: post.data.title,
 			description: post.data.description,

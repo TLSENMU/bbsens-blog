@@ -69,16 +69,10 @@ Set `draft: true` to keep a post out of production pages.
 
 ## Site URL
 
-Update the canonical site URL in `site.config.mjs`:
+Update the canonical site URL in `src/config.ts`:
 
-```js
-siteUrl: 'https://your-domain.com'
-```
-
-You can also set `PUBLIC_SITE_URL` in Cloudflare Pages:
-
-```txt
-PUBLIC_SITE_URL=https://your-domain.com
+```ts
+siteUrl: 'https://frombbs.com'
 ```
 
 This value is used by Astro config, canonical URLs, Open Graph images, RSS, robots.txt, and sitemap. Do not set it to a temporary `pages.dev` URL unless that is intentionally your public site.
@@ -91,7 +85,7 @@ This value is used by Astro config, canonical URLs, Open Graph images, RSS, robo
 - Typography: Chinese serif stack for titles/body, English serif stack for English headings, sans-serif for navigation, tags, dates, and controls.
 - Layout: homepage remains an article list, not a masonry card grid.
 - JavaScript: limited to theme switching and static search.
-- Homepage structure: hero, three primary content entrances, seasonal letter, seasonal picks, recent updates, and a quiet selected-images strip.
+- Homepage structure: hero, seasonal letter, seasonal picks, recent updates, and a quiet selected-images strip.
 
 ## Push to GitHub
 
@@ -116,9 +110,9 @@ Recommended settings:
 - Build output directory: `dist`
 - Root directory: leave empty unless the project is inside a subfolder
 - Node.js version: `22.12.0` or newer
-- Environment variable after custom domain is chosen: `PUBLIC_SITE_URL=https://your-domain.com`
+- Production site URL: configured in `src/config.ts` as `https://frombbs.com`
 
-After every domain change, update `site.config.mjs` and run `npm run build` locally before pushing.
+After every domain change, update `src/config.ts` and run `npm run build` locally before pushing.
 
 ## Custom Domain
 
@@ -126,9 +120,9 @@ In Cloudflare Pages:
 
 1. Open the Pages project.
 2. Go to Custom domains.
-3. Add your domain, for example `example.com` or `www.example.com`.
+3. Add your domain, for example `frombbs.com` or `www.frombbs.com`.
 4. Follow the DNS instructions Cloudflare shows.
-5. Update `site.config.mjs` so `siteUrl` matches the final production domain.
+5. Update `src/config.ts` so `siteUrl` matches the final production domain.
 
 Then run:
 

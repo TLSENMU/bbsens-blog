@@ -16,16 +16,16 @@ interface Props {
 }
 
 const {
-	title = siteConfig.name,
-	description = siteConfig.description,
-	image = '/assets/covers/travel.jpg',
+	title = siteConfig.siteTitle,
+	description = siteConfig.siteDescription,
+	image = '/assets/covers/home-hero.webp',
 	type = 'website',
 	publishedTime,
 	updatedTime,
 	tags = [],
 } = Astro.props;
 
-const pageTitle = title === siteConfig.name ? title : `${title} | ${siteConfig.name}`;
+const pageTitle = Astro.props.title ? `${title}｜${siteConfig.siteTitle}` : `${siteConfig.siteTitle}｜${siteConfig.siteSubtitle}`;
 const canonical = new URL(Astro.url.pathname, siteConfig.siteUrl).toString();
 const ogImage = image.startsWith('http') ? image : new URL(image, siteConfig.siteUrl).toString();
 const rssUrl = new URL('/rss.xml', siteConfig.siteUrl).toString();
@@ -49,8 +49,9 @@ const structuredData =
 		: {
 				'@context': 'https://schema.org',
 				'@type': 'WebSite',
-				name: siteConfig.name,
-				description: siteConfig.description,
+				name: siteConfig.siteTitle,
+				alternateName: siteConfig.siteSubtitle,
+				description: siteConfig.siteDescription,
 				url: siteConfig.siteUrl,
 				author: {
 					'@type': 'Person',
@@ -65,7 +66,7 @@ const structuredData =
 ---
 
 <!doctype html>
-<html lang={siteConfig.locale}>
+<html lang={siteConfig.language}>
 	<head>
 		<meta charset="utf-8" />
 		<meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -75,7 +76,7 @@ const structuredData =
 		<link rel="canonical" href={canonical} />
 		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
 		<link rel="icon" href="/favicon.ico" />
-		<link rel="alternate" type="application/rss+xml" title={`${siteConfig.name} RSS`} href={rssUrl} />
+		<link rel="alternate" type="application/rss+xml" title={`${siteConfig.siteTitle} RSS`} href={rssUrl} />
 		<meta property="og:type" content={type} />
 		<meta property="og:title" content={pageTitle} />
 		<meta property="og:description" content={description} />
