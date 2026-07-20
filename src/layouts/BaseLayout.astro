@@ -18,7 +18,7 @@ interface Props {
 const {
 	title = siteConfig.siteTitle,
 	description = siteConfig.siteDescription,
-	image = '/assets/covers/home-hero.webp',
+	image = '/assets/covers/home-hero-fuji.webp',
 	type = 'website',
 	publishedTime,
 	updatedTime,
@@ -74,8 +74,10 @@ const structuredData =
 		<title>{pageTitle}</title>
 		<meta name="description" content={description} />
 		<link rel="canonical" href={canonical} />
-		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-		<link rel="icon" href="/favicon.ico" />
+		<link rel="icon" type="image/svg+xml" href="/favicon.svg?v=from-bbs-2" />
+		<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png?v=from-bbs-2" />
+		<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png?v=from-bbs-2" />
+		<link rel="shortcut icon" href="/favicon.ico?v=from-bbs-2" />
 		<link rel="alternate" type="application/rss+xml" title={`${siteConfig.siteTitle} RSS`} href={rssUrl} />
 		<meta property="og:type" content={type} />
 		<meta property="og:title" content={pageTitle} />
