@@ -1,17 +1,20 @@
 ---
-title: "占位｜夜里想到的一点小事"
-description: "一篇思绪栏目占位内容，放不急着归类的念头、感受和慢慢想明白的事。"
+title: 占位｜夜里想到的一点小事
+description: 一篇思绪栏目占位内容，放不急着归类的念头、感受和慢慢想明白的事。
 publishDate: 2026-02-18
-tags: ["思绪", "夜里", "随想"]
-cover: "/assets/covers/essay.jpg"
-coverAlt: "占位封面：夜色里带一点雾霭蓝的纸页气氛"
-coverLayout: "standard"
-coverPosition: "50% 50%"
-category: "thoughts"
+tags:
+  - 思绪
+  - 夜里
+  - 随想
+cover: /assets/covers/essay.jpg
+coverAlt: 占位封面：夜色里带一点雾霭蓝的纸页气氛
+coverLayout: standard
+coverPosition: 50% 50%
+category: thoughts
 draft: false
 unlisted: false
-featured: true
-language: "zh"
+featured: false
+language: zh
 ---
 
 > 这篇文章是占位内容，正式上线前可以删除或替换。

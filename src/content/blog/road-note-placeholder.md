@@ -1,18 +1,21 @@
 ---
-title: "占位｜在公路尽头停一下"
-description: "一篇游记占位内容，写路途、车窗和抵达之前那些很慢的时刻。"
+title: 占位｜在公路尽头停一下
+description: 一篇游记占位内容，写路途、车窗和抵达之前那些很慢的时刻。
 publishDate: 2026-06-22
-tags: ["在路上", "新疆", "旅途"]
-cover: "/assets/covers/travel.jpg"
-coverAlt: "占位封面：柔和山谷色调的路途图片"
-coverLayout: "wide"
-coverPosition: "50% 52%"
-category: "journey"
-draft: false
+tags:
+  - 在路上
+  - 新疆
+  - 旅途
+cover: /assets/covers/travel.jpg
+coverAlt: 占位封面：柔和山谷色调的路途图片
+coverLayout: wide
+coverPosition: 50% 52%
+category: journey
+draft: true
 unlisted: false
-featured: true
-location: "Xinjiang"
-language: "zh"
+featured: false
+location: Xinjiang
+language: zh
 ---
 
 > 这篇文章是占位内容，正式上线前可以删除或替换。

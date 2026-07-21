@@ -1,19 +1,22 @@
 ---
-title: "占位｜一碗热汤和一张靠窗的桌子"
-description: "一篇食记占位内容，记录小店、热汤、同桌人的闲话和一个晚上慢慢落下来的心情。"
+title: 占位｜一碗热汤和一张靠窗的桌子
+description: 一篇食记占位内容，记录小店、热汤、同桌人的闲话和一个晚上慢慢落下来的心情。
 publishDate: 2026-05-18
 updatedDate: 2026-05-20
-tags: ["食", "小店", "晚餐"]
-cover: "/assets/covers/daily.jpg"
-coverAlt: "占位封面：暖白与绿色交织的餐桌气氛图片"
-coverLayout: "landscape"
-coverPosition: "50% 48%"
-category: "food"
-draft: false
+tags:
+  - 食
+  - 小店
+  - 晚餐
+cover: /assets/covers/daily.jpg
+coverAlt: 占位封面：暖白与绿色交织的餐桌气氛图片
+coverLayout: landscape
+coverPosition: 50% 48%
+category: food
+draft: true
 unlisted: false
-featured: true
-location: "A Small Restaurant"
-language: "zh"
+featured: false
+location: A Small Restaurant
+language: zh
 ---
 
 > 这篇文章是占位内容，正式上线前可以删除或替换。

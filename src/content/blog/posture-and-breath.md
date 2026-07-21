@@ -1,21 +1,23 @@
 ---
-title: "保持合理自然的姿态和呼吸"
-description: "一篇关于身体、节奏、心态和自我调整的思绪草稿。"
+title: 保持合理自然的姿态和呼吸
+description: 一篇关于身体、节奏、心态和自我调整的思绪草稿。
 publishDate: 2026-07-20
-tags: ["思绪", "身体", "呼吸"]
-cover: "/assets/covers/essay.jpg"
-coverAlt: "占位封面：纸页、光线和安静室内气氛图片"
-coverLayout: "portrait"
-coverPosition: "50% 50%"
-category: "thoughts"
+tags:
+  - 思绪
+  - 身体
+  - 呼吸
+cover: /assets/covers/essay.jpg
+coverAlt: 占位封面：纸页、光线和安静室内气氛图片
+coverLayout: portrait
+coverPosition: 50% 50%
+category: thoughts
 draft: false
 unlisted: false
-featured: false
-language: "zh"
+featured: true
+language: zh
 ---
 
-> 草稿。这个题目很适合写成一篇松弛但有骨架的随笔。
-
+>Cooking
 ## 想写的方向
 
 - 什么是“合理自然”，它和放任、紧绷都不一样

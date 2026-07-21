@@ -1,16 +1,20 @@
 ---
-title: "占位｜一盏灯、一个房间和一位作家"
-description: "一篇关于设计、装修、作家和物件的占位内容，用来承载“喜欢的东西”。"
+title: 占位｜一盏灯、一个房间和一位作家
+description: 一篇关于设计、装修、作家和物件的占位内容，用来承载“喜欢的东西”。
 publishDate: 2026-03-12
-tags: ["设计", "作家", "房间", "物与人"]
-cover: "/assets/covers/notes.jpg"
-coverAlt: "占位封面：冷暖交错的房间与纸页气氛"
-coverLayout: "standard"
-coverPosition: "50% 50%"
-category: "people"
-draft: false
+tags:
+  - 设计
+  - 作家
+  - 房间
+  - 物与人
+cover: /assets/covers/notes.jpg
+coverAlt: 占位封面：冷暖交错的房间与纸页气氛
+coverLayout: standard
+coverPosition: 50% 50%
+category: people
+draft: true
 unlisted: false
-language: "zh"
+language: zh
 ---
 
 > 这篇文章是占位内容，正式上线前可以删除或替换。

@@ -1,22 +1,27 @@
 ---
-title: "占位｜和朋友在下午见面"
-description: "一篇写朋友的占位内容，不像人物采访，更像把一次相处稳稳地记下来。"
+title: 占位｜和朋友在下午见面
+description: 一篇写朋友的占位内容，不像人物采访，更像把一次相处稳稳地记下来。
 publishDate: 2026-04-08
-tags: ["朋友", "日常", "物与人"]
-cover: "/assets/covers/essay.jpg"
-coverAlt: "占位封面：傍晚城市与笔记色调"
-coverLayout: "portrait"
-coverPosition: "50% 50%"
-category: "people"
-draft: false
+tags:
+  - 朋友
+  - 日常
+  - 物与人
+cover: /assets/covers/essay.jpg
+coverAlt: 占位封面：傍晚城市与笔记色调
+coverLayout: portrait
+coverPosition: 50% 50%
+category: people
+draft: true
 unlisted: false
-featured: true
-language: "zh"
+featured: false
+language: zh
 ---
 
 > 这篇文章是占位内容，正式上线前可以删除或替换。
 
 ## 见面
+
+见到了李歆晨
 
 我们约在下午。她比我早到，已经坐在角落里看菜单。桌上有一小瓶水，一支铅笔，还有她随手放下的帆布包。
 
