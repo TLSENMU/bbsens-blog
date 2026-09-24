@@ -27,3 +27,6 @@ src/content/.obsidian/
 
 # jetbrains setting folder
 .idea/
+
+# local blog editor trash
+tools/blog-editor/.trash/

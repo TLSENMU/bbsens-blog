@@ -1,0 +1,2781 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>From BBS · 写作台</title>
+<link rel="icon" href="/favicon.svg" />
+<style>
+	:root {
+		color-scheme: light;
+		--serif: "Noto Serif SC", "Songti SC", "STSong", "Source Han Serif SC", serif;
+		--sans: Inter, "PingFang SC", "Noto Sans SC", system-ui, sans-serif;
+		--mono: "SFMono-Regular", Menlo, Consolas, monospace;
+		--bg: #fbf7ee;
+		--bg-soft: #fffaf2;
+		--bg-panel: #f4eee2;
+		--text: #24211d;
+		--muted: #6d6a62;
+		--faint: #a39b8d;
+		--line: #e7ded1;
+		--line-strong: #cfc4b2;
+		--accent: #8ca6ad;
+		--accent-ink: #4f6c73;
+		--danger: #b5563f;
+		--ok: #6f8a5b;
+		--warn: #b9873a;
+		--journey: #8ca6ad;
+		--food: #c58f68;
+		--people: #7d8b69;
+		--thoughts: #9b98aa;
+		--radius: 8px;
+		--shadow: 0 12px 40px rgb(49 42 32 / 0.08);
+		--shadow-lg: 0 24px 80px rgb(49 42 32 / 0.2);
+		--sidebar: 268px;
+		--panel: 330px;
+	}
+	:root[data-theme="dark"] {
+		color-scheme: dark;
+		--bg: #1d1b18;
+		--bg-soft: #24211d;
+		--bg-panel: #201e1a;
+		--text: #e9e2d6;
+		--muted: #aaa295;
+		--faint: #7a736a;
+		--line: #35312b;
+		--line-strong: #4a453d;
+		--accent: #8faab4;
+		--accent-ink: #b6c9cf;
+		--shadow: none;
+		--shadow-lg: 0 24px 80px rgb(0 0 0 / 0.5);
+	}
+	* { box-sizing: border-box; }
+	html, body { height: 100%; }
+	body {
+		margin: 0;
+		background: var(--bg);
+		color: var(--text);
+		font-family: var(--sans);
+		font-size: 14px;
+		line-height: 1.6;
+		-webkit-font-smoothing: antialiased;
+	}
+	button, input, select, textarea { font: inherit; color: inherit; }
+	button { cursor: pointer; }
+	a { color: var(--accent-ink); }
+	[hidden] { display: none !important; }
+	kbd { font-family: var(--sans); font-size: 0.82em; opacity: 0.6; padding-left: 0.15em; }
+
+	/* ---------- 布局 ---------- */
+	.app {
+		display: grid;
+		grid-template-columns: var(--sidebar) minmax(0, 1fr) var(--panel);
+		grid-template-rows: 54px minmax(0, 1fr);
+		height: 100vh;
+	}
+	.app.panel-hidden { grid-template-columns: var(--sidebar) minmax(0, 1fr) 0; }
+	.app.panel-hidden .panel { display: none; }
+
+	.topbar {
+		grid-column: 1 / -1;
+		display: flex;
+		align-items: center;
+		gap: 0.9rem;
+		padding: 0 0.9rem 0 1.05rem;
+		border-bottom: 1px solid var(--line);
+		background: color-mix(in srgb, var(--bg) 88%, transparent);
+	}
+	.brand { display: grid; line-height: 1.05; }
+	.brand b { font-family: var(--serif); font-weight: 600; font-size: 1rem; }
+	.brand small { color: var(--faint); font-size: 0.68rem; letter-spacing: 0.08em; text-transform: uppercase; }
+	.topbar__title {
+		flex: 1;
+		display: flex;
+		align-items: baseline;
+		gap: 0.6rem;
+		min-width: 0;
+		font-family: var(--serif);
+		font-size: 1rem;
+		white-space: nowrap;
+		overflow: hidden;
+		text-overflow: ellipsis;
+	}
+	.topbar__title .path { color: var(--faint); font-family: var(--mono); font-size: 0.74rem; }
+	.topbar__status { color: var(--faint); font-size: 0.78rem; white-space: nowrap; }
+	.topbar__status.is-dirty { color: var(--warn); }
+	.topbar__status.is-saved { color: var(--ok); }
+	.topbar__status.is-error { color: var(--danger); }
+	.topbar__actions { display: flex; gap: 0.4rem; align-items: center; }
+
+	.btn {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.3rem;
+		min-height: 32px;
+		padding: 0 0.8rem;
+		border: 1px solid var(--line-strong);
+		border-radius: 999px;
+		background: var(--bg-soft);
+		color: var(--text);
+		font-size: 0.8rem;
+		white-space: nowrap;
+	}
+	.btn:hover { border-color: var(--text); }
+	.btn:disabled { opacity: 0.45; cursor: default; border-color: var(--line); }
+	.btn--primary { background: var(--text); color: var(--bg); border-color: var(--text); }
+	.btn--primary:hover { background: var(--accent-ink); border-color: var(--accent-ink); }
+	.btn--ghost { border-color: transparent; background: transparent; color: var(--muted); }
+	.btn--ghost:hover { color: var(--text); background: color-mix(in srgb, var(--line) 50%, transparent); }
+	.btn--danger { color: var(--danger); }
+	.btn--sm { min-height: 26px; padding: 0 0.6rem; font-size: 0.75rem; }
+	.btn--icon { min-width: 32px; padding: 0; justify-content: center; }
+
+	/* ---------- 左栏 ---------- */
+	.sidebar {
+		display: grid;
+		grid-template-rows: auto auto minmax(0, 1fr) auto;
+		border-right: 1px solid var(--line);
+		background: var(--bg-panel);
+		min-height: 0;
+	}
+	.sidebar__head { display: flex; gap: 0.45rem; padding: 0.8rem 0.8rem 0.45rem; }
+	.sidebar__head input {
+		flex: 1;
+		min-width: 0;
+		min-height: 32px;
+		border: 1px solid var(--line);
+		border-radius: 999px;
+		padding: 0 0.8rem;
+		background: var(--bg-soft);
+	}
+	.filters { display: flex; gap: 0.25rem; padding: 0 0.8rem 0.55rem; flex-wrap: wrap; }
+	.chip {
+		border: 1px solid transparent;
+		border-radius: 999px;
+		padding: 0.08rem 0.55rem;
+		background: transparent;
+		color: var(--muted);
+		font-size: 0.73rem;
+	}
+	.chip[aria-pressed="true"] { border-color: var(--line-strong); background: var(--bg-soft); color: var(--text); }
+	.post-list { overflow-y: auto; padding: 0 0.45rem 0.5rem; margin: 0; list-style: none; }
+	.post-item {
+		position: relative;
+		display: grid;
+		gap: 0.1rem;
+		width: 100%;
+		padding: 0.55rem 0.6rem 0.55rem 1rem;
+		border: 0;
+		border-radius: 6px;
+		background: transparent;
+		text-align: left;
+		color: var(--text);
+	}
+	.post-item::before {
+		content: "";
+		position: absolute;
+		left: 0.4rem;
+		top: 0.85rem;
+		width: 4px;
+		height: 4px;
+		border-radius: 50%;
+		background: var(--cat, var(--faint));
+	}
+	.post-item:hover { background: color-mix(in srgb, var(--bg-soft) 70%, transparent); }
+	.post-item[aria-current="true"] { background: var(--bg-soft); box-shadow: inset 0 0 0 1px var(--line); }
+	.post-item__title { font-family: var(--serif); font-size: 0.92rem; line-height: 1.35; }
+	.post-item__meta { display: flex; gap: 0.4rem; flex-wrap: wrap; color: var(--faint); font-size: 0.69rem; }
+	.badge { display: inline-block; border-radius: 3px; padding: 0 0.28rem; font-size: 0.65rem; line-height: 1.5; }
+	.badge--draft { background: color-mix(in srgb, var(--warn) 18%, transparent); color: var(--warn); }
+	.badge--unlisted { background: color-mix(in srgb, var(--faint) 22%, transparent); color: var(--muted); }
+	.badge--featured { background: color-mix(in srgb, var(--accent) 22%, transparent); color: var(--accent-ink); }
+	.badge--error { background: color-mix(in srgb, var(--danger) 18%, transparent); color: var(--danger); }
+	.git-bar {
+		display: grid;
+		gap: 0.4rem;
+		padding: 0.55rem 0.8rem;
+		border-top: 1px solid var(--line);
+		font-size: 0.72rem;
+		color: var(--muted);
+	}
+	.git-bar__counts { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
+	.git-bar__counts b { font-weight: 500; color: var(--text); }
+	.git-bar__counts .warn { color: var(--warn); }
+	.git-bar__counts .ok { color: var(--ok); }
+	.git-bar__counts .behind { color: var(--accent-ink); }
+	.git-bar__actions { display: flex; gap: 0.3rem; flex-wrap: wrap; }
+	.git-bar__actions .btn { min-height: 24px; padding: 0 0.55rem; font-size: 0.72rem; }
+	.git-bar.is-busy { opacity: 0.6; pointer-events: none; }
+	.git-files {
+		max-height: 34vh;
+		overflow-y: auto;
+		margin: 0;
+		padding: 0.5rem 0.6rem;
+		border: 1px solid var(--line);
+		border-radius: 6px;
+		background: var(--bg);
+		list-style: none;
+		font-family: var(--mono);
+		font-size: 0.72rem;
+		line-height: 1.7;
+	}
+	.git-files li { display: grid; grid-template-columns: 1.6rem minmax(0, 1fr); gap: 0.4rem; }
+	.git-files .st { color: var(--faint); }
+	.git-files .st.a { color: var(--ok); }
+	.git-files .st.d { color: var(--danger); }
+	.sidebar__foot { padding: 0.5rem 0.8rem; border-top: 1px solid var(--line); color: var(--faint); font-size: 0.7rem; display: flex; justify-content: space-between; gap: 0.5rem; }
+	.sidebar__foot a { color: inherit; }
+	[data-cat="journey"] { --cat: var(--journey); }
+	[data-cat="food"] { --cat: var(--food); }
+	[data-cat="people"] { --cat: var(--people); }
+	[data-cat="thoughts"] { --cat: var(--thoughts); }
+
+	/* ---------- 中栏 ---------- */
+	.workspace { display: grid; grid-template-rows: auto auto minmax(0, 1fr); min-height: 0; min-width: 0; }
+	.workspace > .toolbar { grid-row: 1; }
+	.workspace > .conflict { grid-row: 2; }
+	.workspace > .editor-pane { grid-row: 3; }
+	.toolbar {
+		display: flex;
+		align-items: center;
+		gap: 0.2rem;
+		flex-wrap: wrap;
+		padding: 0.5rem 1rem;
+		border-bottom: 1px solid var(--line);
+	}
+	.toolbar .sep { width: 1px; height: 16px; margin: 0 0.3rem; background: var(--line); }
+	.toolbar .spacer { flex: 1; }
+	.tabs { display: inline-flex; border: 1px solid var(--line-strong); border-radius: 999px; overflow: hidden; }
+	.tabs button { border: 0; background: transparent; padding: 0.2rem 0.75rem; font-size: 0.78rem; color: var(--muted); }
+	.tabs button[aria-selected="true"] { background: var(--text); color: var(--bg); }
+	.tool {
+		border: 1px solid transparent;
+		border-radius: 6px;
+		padding: 0.2rem 0.5rem;
+		background: transparent;
+		color: var(--muted);
+		font-size: 0.77rem;
+	}
+	.tool:hover { background: color-mix(in srgb, var(--line) 55%, transparent); color: var(--text); }
+	.tool:disabled, .panel__tabs button:disabled { opacity: 0.35; cursor: default; }
+	.tool:disabled:hover { background: transparent; color: var(--muted); }
+	.menu { position: relative; }
+	.menu > summary { list-style: none; cursor: pointer; }
+	.menu > summary::-webkit-details-marker { display: none; }
+	.menu > summary::after { content: " ▾"; opacity: 0.5; }
+	.menu > div {
+		position: absolute;
+		left: 0;
+		top: calc(100% + 6px);
+		z-index: 30;
+		display: grid;
+		min-width: 12rem;
+		padding: 0.25rem;
+		border: 1px solid var(--line-strong);
+		border-radius: 8px;
+		background: var(--bg-soft);
+		box-shadow: var(--shadow);
+	}
+	.menu > div .tool { text-align: left; padding: 0.3rem 0.5rem; }
+	.conflict {
+		display: flex;
+		align-items: center;
+		gap: 0.6rem;
+		padding: 0.5rem 1rem;
+		background: color-mix(in srgb, var(--danger) 12%, var(--bg));
+		border-bottom: 1px solid color-mix(in srgb, var(--danger) 40%, var(--line));
+		color: var(--danger);
+		font-size: 0.8rem;
+	}
+	.conflict .spacer { flex: 1; }
+	.editor-pane { position: relative; display: grid; min-height: 0; }
+	.editor-pane.is-dragover::after {
+		content: "松开以上传图片到这篇文章";
+		position: absolute;
+		inset: 0.6rem;
+		display: grid;
+		place-items: center;
+		border: 2px dashed var(--accent);
+		border-radius: var(--radius);
+		background: color-mix(in srgb, var(--bg) 80%, transparent);
+		color: var(--accent-ink);
+		font-family: var(--serif);
+		font-size: 1.1rem;
+		pointer-events: none;
+	}
+	.editor {
+		width: 100%;
+		height: 100%;
+		margin: 0;
+		padding: 1.8rem clamp(1.2rem, 6vw, 5rem) 6rem;
+		border: 0;
+		outline: 0;
+		resize: none;
+		background: var(--bg);
+		color: var(--text);
+		font-family: var(--serif);
+		font-size: 16.5px;
+		line-height: 1.95;
+		tab-size: 2;
+	}
+	.editor::placeholder { color: var(--faint); }
+	.preview-frame { width: 100%; height: 100%; border: 0; background: var(--bg); }
+	.editor-pane.is-split { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+	.editor-pane.is-split .editor { border-right: 1px solid var(--line); padding: 1.8rem clamp(1rem, 3vw, 2.2rem) 6rem; }
+	.editor-pane.is-split .editor-foot { right: 50%; margin-right: 0.6rem; }
+
+	/* 菜谱小卡表单 */
+	.recipe-form { display: grid; gap: 0.7rem; }
+	.recipe-form .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 0.6rem; }
+	.rows { display: grid; gap: 0.3rem; }
+	.rows__item { display: grid; gap: 0.3rem; align-items: center; }
+	.rows__item--pair { grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.3fr) auto; }
+	.rows__item--one { grid-template-columns: auto minmax(0, 1fr) auto; }
+	.rows__item input { min-height: 30px; border: 1px solid var(--line); border-radius: 6px; padding: 0.25rem 0.5rem; background: var(--bg); width: 100%; }
+	.rows__item .num { color: var(--faint); font-family: var(--mono); font-size: 0.75rem; width: 1.2rem; text-align: right; }
+	.rows__item .del { border: 0; background: transparent; color: var(--faint); font-size: 1rem; line-height: 1; padding: 0 0.3rem; }
+	.rows__item .del:hover { color: var(--danger); }
+	.rows__add { justify-self: start; }
+	dialog.wide { width: min(94vw, 680px); }
+
+	/* 图片设置 */
+	.img-settings { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 0.6rem; color: var(--muted); font-size: 0.74rem; }
+	.img-settings select { min-height: 26px; border: 1px solid var(--line); border-radius: 6px; padding: 0 0.35rem; background: var(--bg-soft); font-size: 0.74rem; }
+	.img-settings label { display: inline-flex; align-items: center; gap: 0.3rem; }
+	.editor-foot {
+		position: absolute;
+		right: 1rem;
+		bottom: 0.6rem;
+		display: flex;
+		gap: 0.75rem;
+		padding: 0.12rem 0.6rem;
+		border-radius: 999px;
+		background: color-mix(in srgb, var(--bg-panel) 88%, transparent);
+		color: var(--faint);
+		font-size: 0.69rem;
+		pointer-events: none;
+	}
+	.empty { display: grid; place-content: center; gap: 1.1rem; text-align: center; color: var(--muted); padding: 2rem; }
+	.empty h2 { margin: 0; font-family: var(--serif); font-weight: 600; font-size: 1.55rem; color: var(--text); }
+	.empty p { margin: 0; max-width: 34rem; }
+	.empty .keys { display: grid; gap: 0.3rem; justify-items: center; color: var(--faint); font-size: 0.8rem; }
+	.empty .keys b { color: var(--muted); font-weight: 500; font-family: var(--mono); }
+
+	/* ---------- 右栏 ---------- */
+	.panel { display: grid; grid-template-rows: auto minmax(0, 1fr); border-left: 1px solid var(--line); background: var(--bg-panel); min-height: 0; }
+	.panel__tabs { display: flex; border-bottom: 1px solid var(--line); }
+	.panel__tabs button {
+		flex: 1;
+		padding: 0.65rem 0.3rem;
+		border: 0;
+		border-bottom: 2px solid transparent;
+		background: transparent;
+		color: var(--muted);
+		font-size: 0.78rem;
+	}
+	.panel__tabs button[aria-selected="true"] { color: var(--text); border-bottom-color: var(--text); }
+	.panel__tabs button .count { color: var(--faint); margin-left: 0.2rem; }
+	.panel__tabs button .count.is-error { color: var(--danger); }
+	.panel__tabs button .count.is-warn { color: var(--warn); }
+	.panel__body { overflow-y: auto; padding: 0.9rem 0.9rem 3rem; }
+	.field { display: grid; gap: 0.28rem; margin-bottom: 0.8rem; }
+	.field > label, .field > .label { color: var(--muted); font-size: 0.73rem; letter-spacing: 0.03em; display: flex; justify-content: space-between; gap: 0.5rem; }
+	.field > label code { font-family: var(--mono); color: var(--faint); font-size: 0.67rem; }
+	.field input[type="text"], .field input[type="date"], .field select, .field textarea {
+		width: 100%;
+		min-height: 32px;
+		border: 1px solid var(--line);
+		border-radius: 6px;
+		padding: 0.3rem 0.55rem;
+		background: var(--bg-soft);
+	}
+	.field textarea { resize: vertical; min-height: 60px; line-height: 1.55; font-family: var(--serif); }
+	.field input:focus, .field select:focus, .field textarea:focus { outline: 2px solid color-mix(in srgb, var(--accent) 60%, transparent); outline-offset: 1px; }
+	.field.has-error input, .field.has-error select, .field.has-error textarea { border-color: var(--danger); }
+	.field .hint { color: var(--faint); font-size: 0.69rem; }
+	.field .hint.is-error { color: var(--danger); }
+	.field .hint.is-warn { color: var(--warn); }
+	.row { display: grid; grid-template-columns: 1fr 1fr; gap: 0.55rem; }
+	.slug-row { display: flex; gap: 0.3rem; }
+	.slug-row input { flex: 1; min-width: 0; font-family: var(--mono); font-size: 0.78rem; }
+	.cat-picker { display: flex; gap: 0.25rem; }
+	.cat-picker button {
+		flex: 1;
+		border: 1px solid var(--line);
+		border-radius: 6px;
+		padding: 0.3rem 0.1rem;
+		background: var(--bg-soft);
+		color: var(--muted);
+		font-size: 0.78rem;
+	}
+	.cat-picker button[aria-pressed="true"] { border-color: var(--cat, var(--text)); background: color-mix(in srgb, var(--cat, var(--accent)) 16%, var(--bg-soft)); color: var(--text); }
+	.toggles { display: grid; gap: 0.3rem; margin: 0.35rem 0 0.9rem; }
+	.toggle { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; padding: 0.4rem 0.55rem; border: 1px solid var(--line); border-radius: 6px; background: var(--bg-soft); }
+	.toggle span { display: grid; }
+	.toggle small { color: var(--faint); font-size: 0.67rem; }
+	.toggle input { width: 17px; height: 17px; accent-color: var(--accent-ink); }
+	.section-title { margin: 1.1rem 0 0.5rem; color: var(--faint); font-size: 0.68rem; letter-spacing: 0.1em; text-transform: uppercase; display: flex; justify-content: space-between; align-items: center; }
+	details.optional { border-top: 1px solid var(--line); padding-top: 0.6rem; margin-top: 0.4rem; }
+	details.optional > summary { list-style: none; cursor: pointer; color: var(--muted); font-size: 0.76rem; display: flex; justify-content: space-between; }
+	details.optional > summary::-webkit-details-marker { display: none; }
+	details.optional > summary::after { content: "展开"; color: var(--faint); font-size: 0.7rem; }
+	details.optional[open] > summary::after { content: "收起"; }
+	details.optional > div { padding-top: 0.7rem; }
+
+	.tags-input { display: flex; flex-wrap: wrap; gap: 0.25rem; padding: 0.25rem; border: 1px solid var(--line); border-radius: 6px; background: var(--bg-soft); min-height: 32px; }
+	.tags-input .tag { display: inline-flex; align-items: center; gap: 0.15rem; padding: 0.02rem 0.18rem 0.02rem 0.45rem; border-radius: 999px; background: color-mix(in srgb, var(--line) 60%, transparent); font-size: 0.75rem; }
+	.tags-input .tag button { border: 0; background: transparent; color: var(--faint); padding: 0 0.25rem; line-height: 1; }
+	.tags-input .tag button:hover { color: var(--danger); }
+	.tags-input input { flex: 1; min-width: 5rem; border: 0; outline: 0; background: transparent; padding: 0.12rem 0.25rem; min-height: 0; }
+	.tag-suggest { display: flex; flex-wrap: wrap; gap: 0.22rem; margin-top: 0.28rem; }
+	.tag-suggest button { border: 1px dashed var(--line-strong); background: transparent; border-radius: 999px; padding: 0 0.45rem; font-size: 0.69rem; color: var(--muted); }
+	.tag-suggest button:hover { color: var(--text); border-style: solid; }
+
+	.cover-box { display: grid; gap: 0.45rem; }
+	.cover-preview {
+		position: relative;
+		width: 100%;
+		border-radius: 6px;
+		overflow: hidden;
+		background: repeating-linear-gradient(45deg, var(--line) 0 6px, transparent 6px 12px);
+		cursor: crosshair;
+		aspect-ratio: 4 / 3;
+	}
+	.cover-preview[data-layout="landscape"] { aspect-ratio: 3 / 2; }
+	.cover-preview[data-layout="portrait"] { aspect-ratio: 3 / 4; max-height: 300px; }
+	.cover-preview[data-layout="wide"] { aspect-ratio: 16 / 9; }
+	.cover-preview img { width: 100%; height: 100%; object-fit: cover; display: block; }
+	.cover-preview .focal { position: absolute; width: 14px; height: 14px; margin: -7px; border: 2px solid #fff; border-radius: 50%; box-shadow: 0 0 0 1px rgb(0 0 0 / 0.4); pointer-events: none; }
+	.cover-preview .placeholder { position: absolute; inset: 0; display: grid; place-items: center; color: var(--faint); font-size: 0.76rem; background: var(--bg-soft); }
+	.cover-actions { display: flex; gap: 0.3rem; flex-wrap: wrap; }
+
+	.asset-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.4rem; }
+	.asset {
+		position: relative;
+		display: grid;
+		gap: 0.18rem;
+		padding: 0;
+		border: 1px solid var(--line);
+		border-radius: 6px;
+		background: var(--bg-soft);
+		overflow: hidden;
+		text-align: left;
+	}
+	.asset img { width: 100%; aspect-ratio: 1; object-fit: cover; display: block; }
+	.asset small { padding: 0 0.3rem 0.28rem; color: var(--muted); font-size: 0.62rem; word-break: break-all; line-height: 1.3; }
+	.asset.is-cover::after { content: "封面"; position: absolute; top: 0.25rem; left: 0.25rem; padding: 0 0.28rem; border-radius: 3px; background: rgb(0 0 0 / 0.55); color: #fff; font-size: 0.6rem; }
+	.asset:hover { border-color: var(--text); }
+	.asset-menu { display: flex; gap: 0.22rem; flex-wrap: wrap; margin-top: 0.4rem; padding: 0.45rem; border: 1px solid var(--line); border-radius: 6px; background: var(--bg-soft); }
+	.asset-menu p { flex-basis: 100%; margin: 0 0 0.2rem; font-family: var(--mono); font-size: 0.68rem; color: var(--muted); word-break: break-all; }
+	.dropzone { display: grid; place-items: center; gap: 0.25rem; padding: 0.9rem; border: 1px dashed var(--line-strong); border-radius: 6px; color: var(--muted); font-size: 0.76rem; text-align: center; cursor: pointer; }
+	.dropzone:hover, .dropzone.is-dragover { border-color: var(--accent-ink); color: var(--text); background: var(--bg-soft); }
+
+	.check-list { margin: 0; padding: 0; list-style: none; display: grid; gap: 0.35rem; }
+	.check-list li { display: grid; grid-template-columns: auto 1fr; gap: 0.45rem; padding: 0.45rem 0.55rem; border-radius: 6px; background: var(--bg-soft); border: 1px solid var(--line); font-size: 0.77rem; }
+	.check-list li::before { content: "●"; font-size: 0.58rem; line-height: 1.8; }
+	.check-list li.is-error::before { color: var(--danger); }
+	.check-list li.is-warn::before { color: var(--warn); }
+	.check-list li.is-ok::before { color: var(--ok); }
+	.check-list code { font-family: var(--mono); font-size: 0.68rem; color: var(--faint); }
+	.yaml {
+		margin: 0.7rem 0 0;
+		padding: 0.7rem;
+		border: 1px solid var(--line);
+		border-radius: 6px;
+		background: var(--bg-soft);
+		font-family: var(--mono);
+		font-size: 0.72rem;
+		line-height: 1.6;
+		white-space: pre-wrap;
+		word-break: break-all;
+		color: var(--muted);
+	}
+	.yaml b { color: var(--text); font-weight: 500; }
+
+	/* ---------- 速记 ---------- */
+	.scrim {
+		position: fixed;
+		inset: 0;
+		z-index: 60;
+		display: grid;
+		background: rgb(22 19 15 / 0.42);
+		backdrop-filter: blur(3px);
+	}
+	.scrim--quick { place-items: start center; padding: clamp(1rem, 6vh, 4rem) 1rem 1rem; }
+	.scrim--palette { place-items: start center; padding: clamp(1rem, 12vh, 7rem) 1rem 1rem; }
+
+	.quick {
+		display: grid;
+		gap: 0.75rem;
+		width: min(100%, 760px);
+		padding: 1.1rem 1.2rem 0.9rem;
+		border: 1px solid var(--line-strong);
+		border-radius: 12px;
+		background: var(--bg-soft);
+		box-shadow: var(--shadow-lg);
+	}
+	.quick__head { display: flex; align-items: center; gap: 0.6rem; }
+	.quick__head .spacer { flex: 1; }
+	.quick__head .hint { color: var(--faint); font-size: 0.72rem; }
+	.quick__meta { display: grid; grid-template-columns: 1fr auto auto; gap: 0.5rem; align-items: end; }
+	.quick__slug { display: flex; align-items: center; border: 1px solid var(--line); border-radius: 6px; background: var(--bg); overflow: hidden; }
+	.quick__slug span { padding: 0 0.1rem 0 0.55rem; color: var(--faint); font-family: var(--mono); font-size: 0.78rem; white-space: nowrap; }
+	.quick__slug input { flex: 1; min-width: 0; border: 0; outline: 0; background: transparent; padding: 0.3rem 0.5rem 0.3rem 0.1rem; font-family: var(--mono); font-size: 0.78rem; }
+	.quick__title {
+		width: 100%;
+		border: 0;
+		border-bottom: 1px solid var(--line);
+		border-radius: 0;
+		background: transparent;
+		padding: 0.2rem 0 0.5rem;
+		font-family: var(--serif);
+		font-size: 1.5rem;
+		font-weight: 600;
+		outline: 0;
+	}
+	.quick__title::placeholder { color: var(--faint); font-weight: 400; }
+	.quick__body {
+		width: 100%;
+		min-height: 32vh;
+		max-height: 44vh;
+		border: 0;
+		outline: 0;
+		resize: none;
+		background: transparent;
+		padding: 0;
+		font-family: var(--serif);
+		font-size: 16px;
+		line-height: 1.95;
+	}
+	.quick__body::placeholder { color: var(--faint); }
+	.quick__foot { display: flex; align-items: center; gap: 0.5rem; padding-top: 0.5rem; border-top: 1px solid var(--line); }
+	.quick__foot .spacer { flex: 1; }
+	.quick__foot .count { color: var(--faint); font-size: 0.72rem; }
+	.quick__target { display: grid; gap: 0.3rem; }
+	.quick__target select { width: 100%; min-height: 34px; border: 1px solid var(--line); border-radius: 6px; padding: 0 0.5rem; background: var(--bg); }
+	.quick__append-opts { display: flex; gap: 0.9rem; color: var(--muted); font-size: 0.75rem; align-items: center; flex-wrap: wrap; }
+	.quick__append-opts label { display: inline-flex; align-items: center; gap: 0.3rem; }
+	.quick__preview { color: var(--faint); font-family: var(--mono); font-size: 0.72rem; }
+
+	/* ---------- ⌘K ---------- */
+	.palette {
+		width: min(100%, 560px);
+		max-height: calc(100vh - 10rem);
+		display: grid;
+		grid-template-rows: auto minmax(0, 1fr);
+		border: 1px solid var(--line-strong);
+		border-radius: 12px;
+		background: var(--bg-soft);
+		box-shadow: var(--shadow-lg);
+		overflow: hidden;
+	}
+	.palette input {
+		width: 100%;
+		min-height: 48px;
+		border: 0;
+		border-bottom: 1px solid var(--line);
+		border-radius: 0;
+		outline: 0;
+		background: transparent;
+		padding: 0 0.9rem;
+		font-family: var(--serif);
+		font-size: 1.05rem;
+	}
+	.palette ul { margin: 0; padding: 0.3rem; list-style: none; overflow-y: auto; }
+	.palette li button {
+		display: grid;
+		grid-template-columns: 1fr auto;
+		gap: 0.5rem;
+		align-items: baseline;
+		width: 100%;
+		padding: 0.45rem 0.6rem;
+		border: 0;
+		border-radius: 6px;
+		background: transparent;
+		text-align: left;
+		color: var(--text);
+	}
+	.palette li button .sub { color: var(--faint); font-size: 0.7rem; }
+	.palette li[aria-selected="true"] button { background: color-mix(in srgb, var(--accent) 18%, transparent); }
+	.palette li button .t { font-family: var(--serif); font-size: 0.95rem; }
+
+	dialog {
+		width: min(92vw, 470px);
+		border: 1px solid var(--line);
+		border-radius: 10px;
+		padding: 1.3rem 1.3rem 1rem;
+		background: var(--bg-soft);
+		color: var(--text);
+		box-shadow: var(--shadow);
+	}
+	dialog::backdrop { background: rgb(20 18 15 / 0.35); }
+	dialog h2 { margin: 0 0 0.9rem; font-family: var(--serif); font-size: 1.25rem; font-weight: 600; }
+	dialog .actions { display: flex; justify-content: flex-end; gap: 0.45rem; margin-top: 0.9rem; }
+	dialog p.note { color: var(--muted); font-size: 0.79rem; margin: 0 0 0.75rem; }
+
+	.toast {
+		position: fixed;
+		left: 50%;
+		bottom: 1.4rem;
+		transform: translate(-50%, 20px);
+		z-index: 80;
+		padding: 0.5rem 1rem;
+		border-radius: 999px;
+		background: var(--text);
+		color: var(--bg);
+		font-size: 0.81rem;
+		opacity: 0;
+		transition: opacity 160ms, transform 160ms;
+		pointer-events: none;
+	}
+	.toast.is-visible { opacity: 1; transform: translate(-50%, 0); }
+	.toast.is-error { background: var(--danger); color: #fff; }
+
+	@media (max-width: 1180px) { :root { --panel: 300px; --sidebar: 236px; } }
+	@media (max-width: 920px) {
+		.app { grid-template-columns: 1fr; grid-template-rows: 54px auto minmax(0, 1fr) auto; height: auto; min-height: 100vh; }
+		.sidebar { border-right: 0; border-bottom: 1px solid var(--line); grid-template-rows: auto auto 36vh auto; }
+		.panel { border-left: 0; border-top: 1px solid var(--line); }
+		.workspace { min-height: 70vh; }
+		.quick__meta { grid-template-columns: 1fr; }
+	}
+</style>
+</head>
+<body>
+<div class="app" id="app">
+	<header class="topbar">
+		<div class="brand"><b>From BBS</b><small>写作台</small></div>
+		<div class="topbar__title" id="topbar-title"><span>没有打开的文章</span></div>
+		<div class="topbar__status" id="save-status"></div>
+		<div class="topbar__actions">
+			<button class="btn btn--ghost btn--sm" id="palette-btn" title="跳转到任意文章（⌘K）">跳转 <kbd>⌘K</kbd></button>
+			<a class="btn btn--ghost btn--sm" id="open-in-dev" target="_blank" rel="noopener" hidden>在站点里看</a>
+			<button class="btn btn--ghost btn--icon" id="theme-toggle" title="切换深浅色" aria-label="切换深浅色">◐</button>
+			<button class="btn btn--primary" id="quick-btn" title="速记一条随笔（N）">速记 <kbd>N</kbd></button>
+		</div>
+	</header>
+
+	<aside class="sidebar">
+		<div class="sidebar__head">
+			<input id="post-filter" type="search" placeholder="筛选标题 / 标签 / slug" autocomplete="off" />
+			<button class="btn btn--icon" id="new-post-btn" title="新建完整文章" aria-label="新建完整文章">＋</button>
+		</div>
+		<div class="filters" id="status-filters">
+			<button class="chip" data-filter="all" aria-pressed="true">全部</button>
+			<button class="chip" data-filter="thoughts">随笔</button>
+			<button class="chip" data-filter="draft">草稿</button>
+			<button class="chip" data-filter="published">已发布</button>
+			<button class="chip" data-filter="unlisted">未列出</button>
+			<button class="chip" data-filter="seasons">季笺</button>
+		</div>
+		<ul class="post-list" id="post-list"></ul>
+		<div class="git-bar" id="git-bar" hidden>
+			<div class="git-bar__counts" id="git-counts"></div>
+			<div class="git-bar__actions">
+				<button class="btn" id="git-pull">拉取</button>
+				<button class="btn btn--primary" id="git-commit">提交并推送…</button>
+				<button class="btn btn--ghost" id="git-refresh" title="向 GitHub 问一下有没有新的">检查</button>
+			</div>
+		</div>
+		<div class="sidebar__foot" id="sidebar-foot"><span>读取中…</span></div>
+	</aside>
+
+	<section class="workspace">
+		<div class="toolbar" id="toolbar">
+			<div class="tabs" role="tablist">
+				<button role="tab" aria-selected="true" data-view="edit">编辑</button>
+				<button role="tab" aria-selected="false" data-view="split">分屏</button>
+				<button role="tab" aria-selected="false" data-view="preview">预览</button>
+			</div>
+			<span class="sep"></span>
+			<button class="tool" data-snippet="h2">标题</button>
+			<button class="tool" data-snippet="quote">引用</button>
+			<button class="tool" id="insert-image-btn">图片</button>
+			<details class="menu" id="insert-menu">
+				<summary class="tool">插入…</summary>
+				<div>
+					<button class="tool" data-snippet="hr">分隔线</button>
+					<button class="tool" data-snippet="pair">图片对（两张并排）</button>
+					<button class="tool" data-snippet="portrait">竖图</button>
+					<button class="tool" data-snippet="wide">宽图（出血）</button>
+					<button class="tool" data-snippet="recipe">菜谱小卡（表单）</button>
+					<button class="tool" data-snippet="recipe-mini">迷你小卡（表单）</button>
+					<button class="tool" data-snippet="recipe-grid">两张并排的容器</button>
+				</div>
+			</details>
+			<span class="spacer"></span>
+			<button class="tool" id="append-btn" title="在这篇文章末尾追加一条">追加一条</button>
+			<button class="tool" id="panel-toggle" title="收起 / 展开右栏（⌘\)">右栏</button>
+			<button class="tool" id="delete-post-btn">删除…</button>
+		</div>
+		<div class="conflict" id="conflict-bar" hidden>
+			<span id="conflict-text">这个文件在磁盘上被改过了（可能是 Obsidian 或 git）。自动保存已暂停。</span>
+			<span class="spacer"></span>
+			<button class="btn btn--sm" id="conflict-reload">重新载入磁盘版本</button>
+			<button class="btn btn--sm btn--danger" id="conflict-overwrite">用我的版本覆盖</button>
+		</div>
+		<div class="editor-pane" id="editor-pane">
+			<div class="empty" id="empty-state">
+				<h2>写点什么。</h2>
+				<p>只改本机上的 <code>src/content/blog/</code> 和 <code>public/assets/posts/</code>。保存之后照旧 <code>git commit</code> 再 push，什么时候上线由你决定。</p>
+				<div class="keys">
+					<div><b>N</b> 速记一条随笔 —— 一屏写完，slug 按日期自动生成</div>
+					<div><b>⌘K</b> 跳到任意一篇文章</div>
+					<div><b>⌘E</b> 在 只写 / 分屏 / 只看 之间轮换</div>
+					<div><b>⌘↩</b> 发布（取消草稿并保存）</div>
+				</div>
+				<p><button class="btn btn--primary" id="empty-quick-btn">速记一条</button> <button class="btn" id="empty-new-btn">新建完整文章</button></p>
+			</div>
+			<textarea class="editor" id="editor" spellcheck="false" placeholder="从这里开始写……" hidden></textarea>
+			<iframe class="preview-frame" id="preview" title="预览" hidden></iframe>
+			<div class="editor-foot" id="editor-foot" hidden><span id="word-count"></span><span id="cursor-pos"></span></div>
+		</div>
+	</section>
+
+	<aside class="panel" id="panel">
+		<div class="panel__tabs" role="tablist">
+			<button role="tab" aria-selected="true" data-panel="meta">信息</button>
+			<button role="tab" aria-selected="false" data-panel="images">图片 <span class="count" id="image-count"></span></button>
+			<button role="tab" aria-selected="false" data-panel="check">检查 <span class="count" id="check-count"></span></button>
+		</div>
+		<div class="panel__body" id="panel-meta">
+			<form id="season-form" autocomplete="off" onsubmit="return false" hidden>
+				<p class="section-title" style="margin-top:0">季笺 · src/content/seasons</p>
+				<div class="field" data-field="title"><label>标题 <code>title</code></label><input type="text" name="title" /><div class="hint"></div></div>
+				<div class="row">
+					<div class="field" data-field="season"><label>季节 <code>season</code></label><select name="season"></select><div class="hint"></div></div>
+					<div class="field" data-field="year"><label>年份 <code>year</code></label><input type="text" name="year" inputmode="numeric" /><div class="hint"></div></div>
+				</div>
+				<div class="field" data-field="description"><label>摘要 <code>description</code></label><textarea name="description" rows="3"></textarea><div class="hint" data-keep="1">季笺的摘要是必填的，会显示在首页「这一季」。</div></div>
+				<div class="field" data-field="publishDate"><label>日期 <code>publishDate</code></label><input type="date" name="publishDate" /><div class="hint"></div></div>
+				<div class="toggles">
+					<label class="toggle"><span>草稿 <small>draft：不会构建，也不上线</small></span><input type="checkbox" name="draft" /></label>
+				</div>
+				<details class="optional">
+					<summary>可选：封面</summary>
+					<div>
+						<div class="field" data-field="cover"><label>路径 <code>cover</code></label><input type="text" name="cover" style="font-family:var(--mono);font-size:.76rem" /><div class="hint"></div></div>
+						<div class="field" data-field="coverAlt"><label>图注 <code>coverAlt</code></label><input type="text" name="coverAlt" /><div class="hint"></div></div>
+						<button type="button" class="btn btn--sm" id="season-cover-pick">从通用封面里选</button>
+					</div>
+				</details>
+				<p class="hint" style="color:var(--faint);font-size:.7rem;margin-top:.8rem">首页「这一季」的三段小注取自正文里的 <code>## 小节</code>。</p>
+			</form>
+			<form id="meta-form" autocomplete="off" onsubmit="return false">
+				<div class="field" data-field="title"><label>标题 <code>title</code></label><input type="text" name="title" /><div class="hint"></div></div>
+				<div class="field" data-field="category">
+					<label>栏目 <code>category</code></label>
+					<div class="cat-picker" id="cat-picker"></div>
+					<select name="category" hidden></select>
+					<div class="hint"></div>
+				</div>
+				<div class="row">
+					<div class="field" data-field="publishDate"><label>发布日期 <code>publishDate</code></label><input type="date" name="publishDate" /><div class="hint"></div></div>
+					<div class="field" data-field="updatedDate"><label>更新日期 <code>updatedDate</code></label><input type="date" name="updatedDate" /><div class="hint"><button type="button" class="btn btn--sm btn--ghost" id="set-updated-today" style="min-height:20px;padding:0 .35rem">填今天</button></div></div>
+				</div>
+				<div class="field" data-field="tags">
+					<label>标签 <code>tags</code></label>
+					<div class="tags-input" id="tags-input"><input type="text" id="tag-entry" placeholder="回车添加" /></div>
+					<div class="tag-suggest" id="tag-suggest"></div>
+					<div class="hint"></div>
+				</div>
+				<div class="toggles">
+					<label class="toggle"><span>草稿 <small>draft：不会构建，也不上线</small></span><input type="checkbox" name="draft" /></label>
+					<label class="toggle"><span>未列出 <small>unlisted：可通过链接访问，不进列表 / RSS / 搜索</small></span><input type="checkbox" name="unlisted" /></label>
+					<label class="toggle"><span>精选 <small>featured：出现在首页「当季精选」</small></span><input type="checkbox" name="featured" /></label>
+				</div>
+
+				<details class="optional" id="optional-fields">
+					<summary>可选：链接、摘要、封面、地点</summary>
+					<div>
+						<div class="field" data-field="slug">
+							<label>链接 slug <code>/blog/…/</code></label>
+							<div class="slug-row"><input type="text" name="slug" /><button type="button" class="btn btn--sm" id="rename-slug">改名</button></div>
+							<div class="hint" data-keep="1">改名会一起搬图片目录并改写正文里的图片路径。</div>
+						</div>
+						<div class="field" data-field="description">
+							<label>摘要 <code>description</code></label>
+							<textarea name="description" rows="2" placeholder="留空就不写这一行"></textarea>
+							<div class="hint" data-keep="1">可选。留空时列表页只显示标题。</div>
+						</div>
+						<div class="field" data-field="location"><label>地点 <code>location</code></label><input type="text" name="location" placeholder="贵阳" /><div class="hint"></div></div>
+						<div class="field" data-field="language"><label>语言 <code>language</code></label><input type="text" name="language" placeholder="zh" /><div class="hint"></div></div>
+
+						<p class="section-title">封面（可选）</p>
+						<div class="cover-box">
+							<div class="cover-preview" id="cover-preview" data-layout="standard" title="点一下设定焦点（coverPosition）">
+								<div class="placeholder">没有封面</div>
+							</div>
+							<div class="cover-actions">
+								<button type="button" class="btn btn--sm" id="cover-pick-btn">从图库选</button>
+								<button type="button" class="btn btn--sm" id="cover-upload-btn">上传</button>
+								<button type="button" class="btn btn--sm btn--ghost" id="cover-clear-btn">清除</button>
+							</div>
+							<div class="field" data-field="cover"><label>路径 <code>cover</code></label><input type="text" name="cover" style="font-family:var(--mono);font-size:.76rem" /><div class="hint"></div></div>
+							<div class="field" data-field="coverAlt"><label>图注 <code>coverAlt</code></label><input type="text" name="coverAlt" /><div class="hint"></div></div>
+							<div class="row">
+								<div class="field" data-field="coverLayout"><label>版式 <code>coverLayout</code></label><select name="coverLayout"></select><div class="hint"></div></div>
+								<div class="field" data-field="coverPosition"><label>焦点 <code>coverPosition</code></label><input type="text" name="coverPosition" placeholder="50% 50%" /><div class="hint"></div></div>
+							</div>
+						</div>
+						<div class="field" id="extra-fields" hidden><label>其他保留字段</label><pre class="yaml" id="extra-yaml"></pre></div>
+					</div>
+				</details>
+			</form>
+		</div>
+		<div class="panel__body" id="panel-images" hidden>
+			<div class="img-settings">
+				<label><input type="checkbox" id="img-compress" checked /> 上传时压缩</label>
+				<select id="img-maxedge" title="最长边">
+					<option value="1600">长边 1600</option>
+					<option value="2000" selected>长边 2000</option>
+					<option value="2400">长边 2400</option>
+					<option value="3000">长边 3000</option>
+				</select>
+				<span id="img-settings-note" style="color:var(--faint)"></span>
+			</div>
+			<div class="dropzone" id="dropzone">拖图片到这里，或点击选择<br /><small>存到 public/assets/posts/<span id="asset-dir-slug">…</span>/</small></div>
+			<input type="file" id="file-input" accept="image/*" multiple hidden />
+			<p class="section-title">这篇文章的图片 <button type="button" class="btn btn--sm btn--ghost" id="open-asset-dir">打开文件夹</button></p>
+			<div class="asset-grid" id="asset-grid"></div>
+			<div class="asset-menu" id="asset-menu" hidden></div>
+			<p class="section-title">通用封面（public/assets/covers）</p>
+			<div class="asset-grid" id="covers-grid"></div>
+		</div>
+		<div class="panel__body" id="panel-check" hidden>
+			<ul class="check-list" id="check-list"></ul>
+			<p class="section-title">将写入的 frontmatter</p>
+			<pre class="yaml" id="yaml-preview"></pre>
+			<p class="hint" style="color:var(--faint);font-size:.69rem;margin-top:.5rem">校验规则镜像自 <code>src/content.config.ts</code>；最终以 <code>npm run build</code> 为准。</p>
+		</div>
+	</aside>
+</div>
+
+<!-- 速记 / 追加 -->
+<div class="scrim scrim--quick" id="quick-scrim" hidden>
+	<div class="quick" role="dialog" aria-modal="true" aria-label="速记">
+		<div class="quick__head">
+			<div class="tabs" role="tablist">
+				<button role="tab" aria-selected="true" data-qmode="new">新随笔</button>
+				<button role="tab" aria-selected="false" data-qmode="append">追加到…</button>
+			</div>
+			<span class="spacer"></span>
+			<span class="hint">esc 关闭</span>
+		</div>
+
+		<div id="quick-new-fields" style="display:grid;gap:.75rem">
+			<div class="quick__meta">
+				<div class="field" style="margin:0">
+					<label>链接 <code id="quick-slug-preview">/blog/…/</code></label>
+					<div class="quick__slug"><span id="quick-slug-prefix">-</span><input type="text" id="quick-suffix" placeholder="可留空" autocomplete="off" spellcheck="false" /></div>
+				</div>
+				<div class="field" style="margin:0"><label>日期</label><input type="date" id="quick-date" /></div>
+				<div class="field" style="margin:0"><label>栏目</label><select id="quick-category" style="min-height:34px;border:1px solid var(--line);border-radius:6px;padding:0 .5rem;background:var(--bg)"></select></div>
+			</div>
+			<input class="quick__title" type="text" id="quick-title" placeholder="标题" autocomplete="off" />
+			<textarea class="quick__body" id="quick-body" placeholder="正文……（⌘↩ 发布，⌘S 存草稿）" spellcheck="false"></textarea>
+			<div class="field" style="margin:0">
+				<div class="tags-input" id="quick-tags"><input type="text" id="quick-tag-entry" placeholder="标签，回车添加" /></div>
+				<div class="tag-suggest" id="quick-tag-suggest"></div>
+			</div>
+		</div>
+
+		<div id="quick-append-fields" style="display:none;gap:.75rem">
+			<div class="quick__target">
+				<label class="label" style="color:var(--muted);font-size:.73rem">追加到哪一篇</label>
+				<select id="quick-target"></select>
+				<div class="quick__append-opts">
+					<label><input type="checkbox" id="quick-heading" checked /> 加日期小标题</label>
+					<label><input type="checkbox" id="quick-separator" /> 加分隔线</label>
+					<span class="quick__preview" id="quick-append-preview"></span>
+				</div>
+			</div>
+			<textarea class="quick__body" id="quick-append-body" placeholder="这次想补的一段……（⌘↩ 追加并保存）" spellcheck="false"></textarea>
+		</div>
+
+		<div class="quick__foot">
+			<span class="count" id="quick-count"></span>
+			<span class="spacer"></span>
+			<button class="btn btn--ghost btn--sm" id="quick-cancel">取消</button>
+			<button class="btn btn--sm" id="quick-draft">存草稿 <kbd>⌘S</kbd></button>
+			<button class="btn btn--primary btn--sm" id="quick-publish">发布 <kbd>⌘↩</kbd></button>
+		</div>
+	</div>
+</div>
+
+<!-- ⌘K -->
+<div class="scrim scrim--palette" id="palette-scrim" hidden>
+	<div class="palette" role="dialog" aria-modal="true" aria-label="跳转">
+		<input type="search" id="palette-input" placeholder="跳到某篇文章，或输入命令…" autocomplete="off" />
+		<ul id="palette-list"></ul>
+	</div>
+</div>
+
+<dialog id="new-dialog">
+	<h2>新建完整文章</h2>
+	<p class="note">给游记、食记这类需要自己想链接名的长文用。随笔按 <b>N</b> 更快。</p>
+	<form method="dialog" id="new-form">
+		<div class="field"><label>标题</label><input type="text" name="title" required /></div>
+		<div class="field"><label>slug（小写字母、数字、连字符）</label><input type="text" name="slug" required pattern="[a-z0-9]+(?:-[a-z0-9]+)*" style="font-family:var(--mono)" placeholder="guiyang-cooking-note" /></div>
+		<div class="row">
+			<div class="field"><label>栏目</label><select name="category"></select></div>
+			<div class="field"><label>发布日期</label><input type="date" name="publishDate" /></div>
+		</div>
+		<div class="actions">
+			<button type="button" class="btn" id="new-cancel">取消</button>
+			<button type="submit" class="btn btn--primary">创建草稿</button>
+		</div>
+	</form>
+</dialog>
+
+<dialog id="git-dialog" class="wide">
+	<h2>提交并推送</h2>
+	<p class="note" id="git-dialog-note"></p>
+	<div class="field"><label>要提交的改动</label><ul class="git-files" id="git-dialog-files"></ul></div>
+	<div class="field"><label>提交信息</label><input type="text" id="git-message" /></div>
+	<label class="toggle" style="margin-bottom:.4rem"><span>推送到 GitHub <small>不勾就只提交到本地</small></span><input type="checkbox" id="git-do-push" checked /></label>
+	<div class="actions">
+		<button type="button" class="btn btn--ghost" id="git-cancel">取消</button>
+		<button type="button" class="btn btn--primary" id="git-confirm">提交并推送</button>
+	</div>
+</dialog>
+
+<dialog id="season-dialog">
+	<h2>新建季笺</h2>
+	<p class="note">写在 <code>src/content/seasons/</code>，首页「这一季」会用最新的一篇。</p>
+	<form method="dialog" id="season-new-form">
+		<div class="field"><label>标题</label><input type="text" name="title" required placeholder="这一季：2026 秋" /></div>
+		<div class="row">
+			<div class="field"><label>季节</label><select name="season"></select></div>
+			<div class="field"><label>年份</label><input type="text" name="year" inputmode="numeric" required /></div>
+		</div>
+		<div class="field"><label>slug</label><input type="text" name="slug" required pattern="[a-z0-9]+(?:-[a-z0-9]+)*" style="font-family:var(--mono)" /></div>
+		<div class="field"><label>摘要（必填）</label><textarea name="description" rows="2" required></textarea></div>
+		<div class="actions">
+			<button type="button" class="btn" id="season-new-cancel">取消</button>
+			<button type="submit" class="btn btn--primary">创建草稿</button>
+		</div>
+	</form>
+</dialog>
+
+<dialog id="recipe-dialog" class="wide">
+	<h2 id="recipe-dialog-title">菜谱小卡</h2>
+	<form class="recipe-form" id="recipe-form" onsubmit="return false">
+		<div class="row2">
+			<div class="field" style="margin:0"><label>菜名</label><input type="text" name="name" placeholder="贵阳辣子鸡" /></div>
+			<div class="field" style="margin:0"><label>要点</label><input type="text" name="point" placeholder="体力和细心耐久足够" /></div>
+		</div>
+		<div class="field" style="margin:0">
+			<label>旁注（右上角那张小纸条，可留空）</label>
+			<input type="text" name="note" placeholder="月梅阿姨说：不加一滴水！" />
+		</div>
+		<div class="field" style="margin:0">
+			<label>原材料</label>
+			<div class="rows" id="recipe-ing"></div>
+			<button type="button" class="btn btn--sm btn--ghost rows__add" id="recipe-ing-add">＋ 加一行</button>
+		</div>
+		<div class="field" style="margin:0">
+			<label>步骤</label>
+			<div class="rows" id="recipe-steps"></div>
+			<button type="button" class="btn btn--sm btn--ghost rows__add" id="recipe-step-add">＋ 加一步</button>
+		</div>
+		<div class="field" style="margin:0">
+			<label>样式</label>
+			<div class="cat-picker" id="recipe-variant">
+				<button type="button" data-variant="brief" aria-pressed="true">标准</button>
+				<button type="button" data-variant="mini" aria-pressed="false">迷你（适合并排）</button>
+			</div>
+		</div>
+		<div class="actions">
+			<button type="button" class="btn btn--ghost" id="recipe-cancel">取消</button>
+			<button type="button" class="btn btn--primary" id="recipe-save">插入</button>
+		</div>
+	</form>
+</dialog>
+
+<dialog id="image-dialog">
+	<h2>插入图片</h2>
+	<p class="note">点一张就插到光标处。</p>
+	<div class="asset-grid" id="dialog-asset-grid" style="grid-template-columns:repeat(4,minmax(0,1fr))"></div>
+	<div class="actions">
+		<button type="button" class="btn" id="dialog-upload-btn">上传新图片</button>
+		<button type="button" class="btn btn--ghost" id="image-cancel">关闭</button>
+	</div>
+</dialog>
+
+<div class="toast" id="toast"></div>
+
+<script>
+(() => {
+	'use strict';
+
+	const $ = (sel, root = document) => root.querySelector(sel);
+	const $$ = (sel, root = document) => Array.from(root.querySelectorAll(sel));
+
+	const state = {
+		meta: null,
+		posts: [],
+		filter: 'all',
+		query: '',
+		current: null,
+		fm: {},
+		extra: {},
+		slug: '',
+		mtimeMs: 0,
+		dirty: false,
+		stale: false,
+		view: 'edit',
+		panel: 'meta',
+		covers: [],
+		validation: { ok: true, errors: [], warnings: [] },
+		kind: 'post',
+		seasons: [],
+		blocks: null,
+		quickMode: 'new',
+		quickTags: [],
+		paletteIndex: 0,
+		paletteItems: [],
+		autosave: true,
+	};
+
+	const CATEGORY_LABEL = { journey: '在路上', food: '食', people: '物与人', thoughts: '思绪' };
+	const LAYOUT_LABEL = { landscape: 'landscape · 3:2', standard: 'standard · 4:3', portrait: 'portrait · 3:4', wide: 'wide · 16:9' };
+	const LS = {
+		get(k, d) { try { const v = localStorage.getItem('editor:' + k); return v === null ? d : JSON.parse(v); } catch { return d; } },
+		set(k, v) { try { localStorage.setItem('editor:' + k, JSON.stringify(v)); } catch {} },
+	};
+
+	const el = {
+		app: $('#app'),
+		list: $('#post-list'), filterInput: $('#post-filter'), statusFilters: $('#status-filters'), foot: $('#sidebar-foot'),
+		title: $('#topbar-title'), status: $('#save-status'), openDev: $('#open-in-dev'),
+		editor: $('#editor'), preview: $('#preview'), empty: $('#empty-state'), editorPane: $('#editor-pane'),
+		editorFoot: $('#editor-foot'), wordCount: $('#word-count'), cursorPos: $('#cursor-pos'),
+		form: $('#meta-form'), seasonForm: $('#season-form'), catPicker: $('#cat-picker'),
+		recipeDialog: $('#recipe-dialog'), recipeIng: $('#recipe-ing'), recipeSteps: $('#recipe-steps'),
+		imgCompress: $('#img-compress'), imgMaxEdge: $('#img-maxedge'), imgNote: $('#img-settings-note'),
+		tagsInput: $('#tags-input'), tagEntry: $('#tag-entry'), tagSuggest: $('#tag-suggest'),
+		coverPreview: $('#cover-preview'),
+		assetGrid: $('#asset-grid'), assetMenu: $('#asset-menu'), coversGrid: $('#covers-grid'),
+		checkList: $('#check-list'), yamlPreview: $('#yaml-preview'), checkCount: $('#check-count'), imageCount: $('#image-count'),
+		fileInput: $('#file-input'), dropzone: $('#dropzone'), toast: $('#toast'),
+		newDialog: $('#new-dialog'), newForm: $('#new-form'), imageDialog: $('#image-dialog'), dialogAssetGrid: $('#dialog-asset-grid'),
+		extraFields: $('#extra-fields'), extraYaml: $('#extra-yaml'), assetDirSlug: $('#asset-dir-slug'),
+		conflict: $('#conflict-bar'),
+		quickScrim: $('#quick-scrim'), quickTitle: $('#quick-title'), quickBody: $('#quick-body'),
+		quickSuffix: $('#quick-suffix'), quickPrefix: $('#quick-slug-prefix'), quickSlugPreview: $('#quick-slug-preview'),
+		quickDate: $('#quick-date'), quickCategory: $('#quick-category'), quickTags: $('#quick-tags'),
+		quickTagEntry: $('#quick-tag-entry'), quickTagSuggest: $('#quick-tag-suggest'), quickCount: $('#quick-count'),
+		quickNewFields: $('#quick-new-fields'), quickAppendFields: $('#quick-append-fields'),
+		quickTarget: $('#quick-target'), quickAppendBody: $('#quick-append-body'), quickAppendPreview: $('#quick-append-preview'),
+		quickHeading: $('#quick-heading'), quickSeparator: $('#quick-separator'),
+		paletteScrim: $('#palette-scrim'), paletteInput: $('#palette-input'), paletteList: $('#palette-list'),
+	};
+
+	// ------------------------------------------------------------------ 工具
+	async function api(path, options = {}) {
+		const isBinary = options.body instanceof Blob || options.body instanceof File;
+		const res = await fetch(path, {
+			headers: options.body && !isBinary ? { 'content-type': 'application/json' } : options.headers,
+			...options,
+		});
+		const data = await res.json().catch(() => ({}));
+		if (!res.ok) {
+			const error = new Error(data.error || `${res.status} ${res.statusText}`);
+			error.data = data;
+			error.status = res.status;
+			throw error;
+		}
+		return data;
+	}
+
+	let toastTimer = 0;
+	function toast(message, isError = false) {
+		el.toast.textContent = message;
+		el.toast.classList.toggle('is-error', isError);
+		el.toast.classList.add('is-visible');
+		clearTimeout(toastTimer);
+		toastTimer = setTimeout(() => el.toast.classList.remove('is-visible'), isError ? 4600 : 2000);
+	}
+
+	function debounce(fn, wait) {
+		let t = 0;
+		return (...a) => { clearTimeout(t); t = setTimeout(() => fn(...a), wait); };
+	}
+
+	const escapeHtml = (t) => String(t ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
+	const formatBytes = (n) => (n < 1024 ? `${n} B` : n < 1048576 ? `${(n / 1024).toFixed(0)} KB` : `${(n / 1048576).toFixed(1)} MB`);
+	const countWords = (t) => ({ cjk: (String(t).match(/[一-鿿]/g) || []).length, latin: (String(t).match(/[A-Za-z0-9]+/g) || []).length });
+	const slugifyAscii = (t) => String(t || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 48);
+	const isTyping = () => ['INPUT', 'TEXTAREA', 'SELECT'].includes(document.activeElement?.tagName);
+
+	const isSeason = () => state.kind === 'season';
+	const activeForm = () => (isSeason() ? el.seasonForm : el.form);
+
+	/** 季笺没有图片目录，也谈不上「追加一条」，相关入口直接关掉。 */
+	function syncKindUI() {
+		const season = isSeason();
+		for (const sel of ['#append-btn', '#insert-image-btn']) $(sel).disabled = season;
+		$('[data-panel="images"]').disabled = season;
+		$('[data-panel="images"]').title = season ? '季笺没有自己的图片目录' : '';
+		if (season) {
+			el.imageCount.textContent = '';
+			el.assetGrid.innerHTML = '<p style="grid-column:1/-1;color:var(--faint);font-size:.75rem;margin:0">季笺用通用封面，在「信息 → 可选：封面」里选。</p>';
+			el.assetMenu.hidden = true;
+			if (state.panel === 'images') switchPanel('meta');
+		}
+	}
+
+	function setStatus(text, cls = '') {
+		el.status.textContent = text;
+		el.status.className = 'topbar__status' + (cls ? ' ' + cls : '');
+	}
+
+	function setDirty(flag) {
+		state.dirty = flag;
+		if (!state.current) return setStatus('');
+		if (flag) { setStatus('未保存', 'is-dirty'); scheduleAutosave(); }
+	}
+
+	// ------------------------------------------------------------------ 主题
+	function applyTheme(theme) {
+		document.documentElement.dataset.theme = theme;
+		LS.set('theme', theme);
+		const doc = el.preview.contentDocument;
+		if (doc?.documentElement) doc.documentElement.dataset.theme = theme;
+	}
+	$('#theme-toggle').addEventListener('click', () => applyTheme(document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark'));
+	applyTheme(LS.get('theme', null) || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'));
+
+	// ------------------------------------------------------------------ 列表
+	async function loadSeasons() {
+		state.seasons = await api('/api/seasons').catch(() => []);
+		if (state.filter === 'seasons') renderList();
+	}
+
+	async function loadPosts() {
+		state.posts = await api('/api/posts');
+		renderList();
+		const published = state.posts.filter((p) => !p.draft && !p.unlisted).length;
+		el.foot.innerHTML = `<span>${state.posts.length} 篇 · ${published} 公开</span><a href="${escapeHtml(state.meta?.astroDevUrl || '#')}" target="_blank" rel="noopener">dev 站点</a>`;
+		fillTargets();
+	}
+
+	function visiblePosts() {
+		const q = state.query.trim().toLowerCase();
+		return state.posts.filter((p) => {
+			if (state.filter === 'draft' && !p.draft) return false;
+			if (state.filter === 'unlisted' && !p.unlisted) return false;
+			if (state.filter === 'thoughts' && p.category !== 'thoughts') return false;
+			if (state.filter === 'published' && (p.draft || p.unlisted)) return false;
+			if (!q) return true;
+			return [p.title, p.slug, p.description, p.location, ...(p.tags || [])].join(' ').toLowerCase().includes(q);
+		});
+	}
+
+	function renderSeasonList() {
+		el.list.innerHTML = '';
+		if (!state.seasons.length) {
+			el.list.innerHTML = '<li style="padding:1rem .7rem;color:var(--faint);font-size:.78rem">还没有季笺。按 ＋ 新建一篇。</li>';
+			return;
+		}
+		for (const it of state.seasons) {
+			const li = document.createElement('li');
+			const btn = document.createElement('button');
+			btn.className = 'post-item';
+			btn.setAttribute('aria-current', isSeason() && it.slug === state.slug ? 'true' : 'false');
+			btn.innerHTML = `
+				<span class="post-item__title">${escapeHtml(it.title)}</span>
+				<span class="post-item__meta">
+					<span>${escapeHtml(it.publishDate || '')}</span>
+					<span>${escapeHtml(String(it.year))} ${escapeHtml(it.season)}</span>
+					<span>${it.words} 字</span>
+					${it.draft ? '<span class="badge badge--draft">草稿</span>' : ''}
+					${it.yamlError ? '<span class="badge badge--error">YAML 错误</span>' : ''}
+				</span>`;
+			btn.addEventListener('click', () => openSeason(it.slug));
+			li.append(btn);
+			el.list.append(li);
+		}
+	}
+
+	function renderList() {
+		if (state.filter === 'seasons') return renderSeasonList();
+		const items = visiblePosts();
+		el.list.innerHTML = '';
+		if (!items.length) {
+			el.list.innerHTML = '<li style="padding:1rem .7rem;color:var(--faint);font-size:.78rem">没有匹配的文章。</li>';
+			return;
+		}
+		for (const p of items) {
+			const li = document.createElement('li');
+			const btn = document.createElement('button');
+			btn.className = 'post-item';
+			btn.dataset.cat = p.category;
+			btn.setAttribute('aria-current', p.slug === state.slug ? 'true' : 'false');
+			btn.innerHTML = `
+				<span class="post-item__title">${escapeHtml(p.title)}</span>
+				<span class="post-item__meta">
+					<span>${escapeHtml(p.publishDate || '未定日期')}</span>
+					<span>${escapeHtml(CATEGORY_LABEL[p.category] || p.category || '?')}</span>
+					<span>${p.words} 字</span>
+					${p.draft ? '<span class="badge badge--draft">草稿</span>' : ''}
+					${p.unlisted ? '<span class="badge badge--unlisted">未列出</span>' : ''}
+					${p.featured ? '<span class="badge badge--featured">精选</span>' : ''}
+					${p.yamlError ? '<span class="badge badge--error">YAML 错误</span>' : ''}
+				</span>`;
+			btn.addEventListener('click', () => openPost(p.slug));
+			li.append(btn);
+			el.list.append(li);
+		}
+	}
+
+	el.filterInput.addEventListener('input', () => { state.query = el.filterInput.value; renderList(); });
+	el.statusFilters.addEventListener('click', (e) => {
+		const chip = e.target.closest('.chip');
+		if (!chip) return;
+		state.filter = chip.dataset.filter;
+		$$('.chip', el.statusFilters).forEach((c) => c.setAttribute('aria-pressed', c === chip ? 'true' : 'false'));
+		if (state.filter === 'seasons' && !state.seasons.length) loadSeasons();
+		renderList();
+	});
+
+	// ------------------------------------------------------------------ 打开 / 表单
+	async function openPost(slug, { silent = false } = {}) {
+		if (state.dirty && !silent) {
+			await saveNow({ quiet: true }).catch(() => {});
+			if (state.dirty && !confirm('当前文章还有没保存的修改，仍然切换？')) return;
+		}
+		try {
+			const post = await api(`/api/posts/${encodeURIComponent(slug)}`);
+			adoptPost(post);
+			el.empty.hidden = true;
+			el.editorFoot.hidden = false;
+			el.openDev.hidden = false;
+			switchView(state.view);
+			setStatus('已保存', 'is-saved');
+			LS.set('lastOpen', { kind: 'post', slug: post.slug });
+			location.hash = post.slug;
+			if (post.yamlError) toast(`这篇文章的 frontmatter 解析失败：${post.yamlError}`, true);
+			await runValidation();
+		} catch (error) {
+			toast(error.message, true);
+		}
+	}
+
+	/**
+	 * keepCaret：保存之后重新挂载同一篇文章时用。设 textarea.value 会把光标丢到开头，
+	 * 自动保存又常常发生在光标不在正文里的时候，不留住的话下一次插入就会跑到文章最前面。
+	 */
+	function adoptPost(post, { keepCaret = false } = {}) {
+		state.kind = 'post';
+		el.seasonForm.hidden = true;
+		el.form.hidden = false;
+		state.current = post;
+		state.slug = post.slug;
+		state.fm = { ...post.frontmatter };
+		state.extra = post.extra || {};
+		state.mtimeMs = post.mtimeMs;
+		state.dirty = false;
+		state.stale = false;
+		el.conflict.hidden = true;
+		const caret = keepCaret ? [el.editor.selectionStart, el.editor.selectionEnd, el.editor.scrollTop] : null;
+		el.editor.value = post.body;
+		el.editor.setSelectionRange(caret ? caret[0] : 0, caret ? caret[1] : 0);
+		el.editor.scrollTop = caret ? caret[2] : 0;
+		state.blocks = null;
+		fillForm();
+		renderAssets(post.assets || []);
+		el.openDev.href = `${state.meta.astroDevUrl}/blog/${post.slug}/`;
+		el.assetDirSlug.textContent = post.slug;
+		el.form.slug.value = post.slug;
+		syncKindUI();
+		renderList();
+		updateTitle();
+		updateWordCount();
+	}
+
+	async function openSeason(slug) {
+		if (state.dirty) {
+			await saveNow({ quiet: true }).catch(() => {});
+			if (state.dirty && !confirm('还有没保存的修改，仍然切换？')) return;
+		}
+		try {
+			const season = await api(`/api/seasons/${encodeURIComponent(slug)}`);
+			state.kind = 'season';
+			state.current = season;
+			state.slug = season.slug;
+			state.fm = { ...season.frontmatter };
+			state.extra = season.extra || {};
+			state.mtimeMs = season.mtimeMs;
+			state.dirty = false;
+			state.stale = false;
+			el.conflict.hidden = true;
+			el.editor.value = season.body;
+			el.editor.setSelectionRange(0, 0);
+			el.editor.scrollTop = 0;
+			fillSeasonForm();
+			el.form.hidden = true;
+			el.seasonForm.hidden = false;
+			el.empty.hidden = true;
+			el.editorFoot.hidden = false;
+			el.openDev.hidden = false;
+			el.openDev.href = `${state.meta.astroDevUrl}/seasons/${season.slug}/`;
+			syncKindUI();
+			switchView(state.view);
+			updateTitle();
+			updateWordCount();
+			renderList();
+			setStatus('已保存', 'is-saved');
+			LS.set('lastOpen', { kind: 'season', slug: season.slug });
+			location.hash = `season/${season.slug}`;
+			await runValidation();
+		} catch (e) { toast(e.message, true); }
+	}
+
+	function fillSeasonForm() {
+		const f = el.seasonForm;
+		f.title.value = state.fm.title ?? '';
+		f.season.value = state.fm.season ?? '';
+		f.year.value = state.fm.year ?? '';
+		f.description.value = state.fm.description ?? '';
+		f.publishDate.value = state.fm.publishDate ?? '';
+		f.draft.checked = Boolean(state.fm.draft);
+		f.cover.value = state.fm.cover ?? '';
+		f.coverAlt.value = state.fm.coverAlt ?? '';
+	}
+	function readSeasonForm() {
+		const f = el.seasonForm;
+		state.fm = {
+			title: f.title.value,
+			season: f.season.value,
+			year: Number(f.year.value) || new Date().getFullYear(),
+			description: f.description.value,
+			publishDate: f.publishDate.value,
+			draft: f.draft.checked,
+			cover: f.cover.value,
+			coverAlt: f.coverAlt.value,
+		};
+	}
+	el.seasonForm.addEventListener('input', () => {
+		if (!isSeason() || !state.current) return;
+		readSeasonForm(); setDirty(true);
+		if (event?.target?.name === 'title') updateTitle();
+		scheduleValidation();
+	});
+	el.seasonForm.addEventListener('change', () => {
+		if (!isSeason() || !state.current) return;
+		readSeasonForm(); setDirty(true); scheduleValidation();
+	});
+	$('#season-cover-pick').addEventListener('click', () => {
+		state.imageDialogMode = 'season-cover';
+		$('h2', el.imageDialog).textContent = '选择季笺封面';
+		el.dialogAssetGrid.innerHTML = '';
+		for (const a of state.covers) {
+			el.dialogAssetGrid.append(assetButton(a, {
+				isCover: a.url === el.seasonForm.cover.value.trim(),
+				onClick: (asset) => {
+					el.seasonForm.cover.value = asset.url;
+					el.seasonForm.dispatchEvent(new Event('input', { bubbles: true }));
+					el.imageDialog.close();
+				},
+			}));
+		}
+		el.imageDialog.showModal();
+	});
+
+	function updateTitle() {
+		if (!state.current) { el.title.innerHTML = '<span>没有打开的文章</span>'; return; }
+		el.title.innerHTML = `<span>${escapeHtml(state.fm.title || '(无标题)')}</span><span class="path">${escapeHtml(state.current.file)}</span>`;
+	}
+
+	function fillForm() {
+		const f = el.form;
+		f.title.value = state.fm.title ?? '';
+		f.description.value = state.fm.description ?? '';
+		f.category.value = state.fm.category ?? '';
+		f.location.value = state.fm.location ?? '';
+		f.publishDate.value = state.fm.publishDate ?? '';
+		f.updatedDate.value = state.fm.updatedDate ?? '';
+		f.draft.checked = Boolean(state.fm.draft);
+		f.unlisted.checked = Boolean(state.fm.unlisted);
+		f.featured.checked = Boolean(state.fm.featured);
+		f.cover.value = state.fm.cover ?? '';
+		f.coverAlt.value = state.fm.coverAlt ?? '';
+		f.coverLayout.value = state.fm.coverLayout ?? 'standard';
+		f.coverPosition.value = state.fm.coverPosition ?? '50% 50%';
+		f.language.value = state.fm.language ?? '';
+		renderCatPicker();
+		renderTags();
+		renderCover();
+		const extraKeys = Object.keys(state.extra);
+		el.extraFields.hidden = extraKeys.length === 0;
+		el.extraYaml.textContent = extraKeys.map((k) => `${k}: ${JSON.stringify(state.extra[k])}`).join('\n');
+	}
+
+	function readForm() {
+		const f = el.form;
+		state.fm = {
+			title: f.title.value,
+			description: f.description.value,
+			publishDate: f.publishDate.value,
+			updatedDate: f.updatedDate.value,
+			tags: state.fm.tags || [],
+			cover: f.cover.value,
+			coverAlt: f.coverAlt.value,
+			coverLayout: f.coverLayout.value,
+			coverPosition: f.coverPosition.value,
+			category: f.category.value,
+			draft: f.draft.checked,
+			unlisted: f.unlisted.checked,
+			featured: f.featured.checked,
+			location: f.location.value,
+			language: f.language.value,
+		};
+	}
+
+	function renderCatPicker() {
+		el.catPicker.innerHTML = '';
+		for (const c of state.meta.categories) {
+			const b = document.createElement('button');
+			b.type = 'button';
+			b.dataset.cat = c;
+			b.textContent = CATEGORY_LABEL[c] || c;
+			b.setAttribute('aria-pressed', el.form.category.value === c ? 'true' : 'false');
+			b.addEventListener('click', () => {
+				el.form.category.value = c;
+				renderCatPicker();
+				el.form.dispatchEvent(new Event('input', { bubbles: true }));
+			});
+			el.catPicker.append(b);
+		}
+	}
+
+	el.form.addEventListener('input', (e) => {
+		if (!state.current) return;
+		if (e.target.name === 'slug') return; // slug 只在按「改名」时生效
+		readForm();
+		setDirty(true);
+		if (e.target.name === 'title') updateTitle();
+		if (['cover', 'coverLayout', 'coverPosition'].includes(e.target.name)) renderCover();
+		scheduleValidation();
+	});
+	el.form.addEventListener('change', (e) => {
+		if (!state.current || e.target.name === 'slug') return;
+		readForm(); setDirty(true); renderCover(); scheduleValidation();
+	});
+	$('#set-updated-today').addEventListener('click', () => {
+		el.form.updatedDate.value = state.meta.today;
+		el.form.dispatchEvent(new Event('input', { bubbles: true }));
+	});
+	$('#rename-slug').addEventListener('click', async () => {
+		const next = el.form.slug.value.trim();
+		if (!state.current || next === state.slug) return;
+		await saveNow({ newSlug: next });
+	});
+
+	// 标签
+	function renderTags() {
+		$$('.tag', el.tagsInput).forEach((t) => t.remove());
+		for (const tag of state.fm.tags || []) {
+			const span = document.createElement('span');
+			span.className = 'tag';
+			span.innerHTML = `${escapeHtml(tag)}<button type="button" aria-label="删除标签">×</button>`;
+			span.querySelector('button').addEventListener('click', () => {
+				state.fm.tags = state.fm.tags.filter((t) => t !== tag);
+				renderTags(); setDirty(true); scheduleValidation();
+			});
+			el.tagsInput.insertBefore(span, el.tagEntry);
+		}
+		renderTagSuggest(el.tagSuggest, state.fm.tags || [], (tag) => addTag(tag));
+	}
+	function allTagCounts(exclude = []) {
+		const used = new Set(exclude);
+		const counts = new Map();
+		for (const p of state.posts) for (const t of p.tags || []) if (!used.has(t)) counts.set(t, (counts.get(t) || 0) + 1);
+		return [...counts.entries()].sort((a, b) => b[1] - a[1]);
+	}
+	function renderTagSuggest(node, used, onPick) {
+		node.innerHTML = '';
+		for (const [tag, n] of allTagCounts(used).slice(0, 8)) {
+			const b = document.createElement('button');
+			b.type = 'button';
+			b.textContent = `+ ${tag}`;
+			b.title = `${n} 篇用过`;
+			b.addEventListener('click', () => onPick(tag));
+			node.append(b);
+		}
+	}
+	function addTag(raw) {
+		const parts = String(raw).split(/[,，]/).map((s) => s.trim()).filter(Boolean);
+		if (!parts.length) return;
+		state.fm.tags = [...new Set([...(state.fm.tags || []), ...parts])];
+		el.tagEntry.value = '';
+		renderTags(); setDirty(true); scheduleValidation();
+	}
+	el.tagEntry.addEventListener('keydown', (e) => {
+		if (e.key === 'Enter' || e.key === ',' || e.key === '，') { e.preventDefault(); addTag(el.tagEntry.value); }
+		else if (e.key === 'Backspace' && !el.tagEntry.value && state.fm.tags?.length) {
+			state.fm.tags = state.fm.tags.slice(0, -1); renderTags(); setDirty(true);
+		}
+	});
+	el.tagEntry.addEventListener('blur', () => { if (el.tagEntry.value.trim()) addTag(el.tagEntry.value); });
+
+	// 封面
+	function renderCover() {
+		const cover = el.form.cover.value.trim();
+		const layout = el.form.coverLayout.value || 'standard';
+		const position = el.form.coverPosition.value || '50% 50%';
+		el.coverPreview.dataset.layout = layout;
+		if (!cover) {
+			el.coverPreview.innerHTML = '<div class="placeholder">没有封面</div>';
+		} else {
+			const [x = '50%', y = '50%'] = position.split(/\s+/);
+			el.coverPreview.innerHTML = `<img src="${escapeHtml(cover)}" alt="" style="object-position:${escapeHtml(position)}" /><span class="focal" style="left:${escapeHtml(x)};top:${escapeHtml(y)}"></span>`;
+			el.coverPreview.querySelector('img').addEventListener('error', () => {
+				el.coverPreview.innerHTML = `<div class="placeholder">找不到 public${escapeHtml(cover)}</div>`;
+			});
+		}
+		renderAssets(state.current?.assets || []);
+	}
+	el.coverPreview.addEventListener('click', (e) => {
+		if (!el.form.cover.value.trim()) return;
+		const r = el.coverPreview.getBoundingClientRect();
+		const x = Math.min(100, Math.max(0, Math.round(((e.clientX - r.left) / r.width) * 100)));
+		const y = Math.min(100, Math.max(0, Math.round(((e.clientY - r.top) / r.height) * 100)));
+		el.form.coverPosition.value = `${x}% ${y}%`;
+		el.form.dispatchEvent(new Event('input', { bubbles: true }));
+	});
+	$('#cover-clear-btn').addEventListener('click', () => {
+		el.form.cover.value = ''; el.form.coverAlt.value = '';
+		el.form.dispatchEvent(new Event('input', { bubbles: true }));
+	});
+	$('#cover-pick-btn').addEventListener('click', () => openImageDialog('cover'));
+	$('#cover-upload-btn').addEventListener('click', () => { state.uploadIntent = 'cover'; el.fileInput.click(); });
+	function setCover(url) {
+		el.form.cover.value = url;
+		el.form.dispatchEvent(new Event('input', { bubbles: true }));
+		$('#optional-fields').open = true;
+		toast('已设为封面');
+	}
+
+	// ------------------------------------------------------------------ 图片
+	function assetButton(asset, { onClick, isCover }) {
+		const b = document.createElement('button');
+		b.type = 'button';
+		b.className = `asset${isCover ? ' is-cover' : ''}`;
+		b.title = asset.url;
+		b.innerHTML = `<img src="${escapeHtml(asset.url)}" alt="" loading="lazy" /><small>${escapeHtml(asset.name)}${asset.size ? ` · ${formatBytes(asset.size)}` : ''}</small>`;
+		b.addEventListener('click', () => onClick(asset));
+		return b;
+	}
+	function renderAssets(assets) {
+		if (state.current) state.current.assets = assets;
+		el.imageCount.textContent = assets.length ? assets.length : '';
+		el.assetGrid.innerHTML = '';
+		if (!assets.length) el.assetGrid.innerHTML = '<p style="grid-column:1/-1;color:var(--faint);font-size:.75rem;margin:0">还没有图片。拖进来就行。</p>';
+		const cover = el.form.cover.value.trim();
+		for (const a of assets) el.assetGrid.append(assetButton(a, { isCover: a.url === cover, onClick: (x) => showAssetMenu(x) }));
+		el.coversGrid.innerHTML = '';
+		for (const a of state.covers) el.coversGrid.append(assetButton(a, { isCover: a.url === cover, onClick: (x) => showAssetMenu(x, true) }));
+	}
+	function showAssetMenu(asset, isShared = false) {
+		el.assetMenu.hidden = false;
+		el.assetMenu.innerHTML = `<p>${escapeHtml(asset.url)}</p>`;
+		const add = (label, fn, cls = '') => {
+			const b = document.createElement('button');
+			b.type = 'button'; b.className = `btn btn--sm ${cls}`; b.textContent = label;
+			b.addEventListener('click', fn); el.assetMenu.append(b);
+		};
+		add('插入正文', () => { insertSnippet('image', asset); el.assetMenu.hidden = true; });
+		add('设为封面', () => { setCover(asset.url); el.assetMenu.hidden = true; });
+		add('复制路径', async () => { await navigator.clipboard?.writeText(asset.url); toast('已复制'); });
+		if (!isShared) {
+			add('重命名', async () => {
+				const name = prompt('新文件名（保留扩展名）', asset.name);
+				if (!name || name === asset.name) return;
+				try {
+					const r = await api(`/api/assets/${encodeURIComponent(state.slug)}/${encodeURIComponent(asset.name)}`, { method: 'PATCH', body: JSON.stringify({ name }) });
+					if (el.editor.value.includes(r.oldUrl)) { el.editor.value = el.editor.value.split(r.oldUrl).join(r.url); setDirty(true); }
+					if (el.form.cover.value === r.oldUrl) { el.form.cover.value = r.url; el.form.dispatchEvent(new Event('input', { bubbles: true })); }
+					await refreshAssets(); el.assetMenu.hidden = true; toast('已重命名，正文里的路径也改了');
+				} catch (e) { toast(e.message, true); }
+			});
+			add('删除', async () => {
+				if (!confirm(`删除 ${asset.name}？会移到 tools/blog-editor/.trash。`)) return;
+				try {
+					await api(`/api/assets/${encodeURIComponent(state.slug)}/${encodeURIComponent(asset.name)}`, { method: 'DELETE' });
+					await refreshAssets(); el.assetMenu.hidden = true; toast('已移到回收目录');
+				} catch (e) { toast(e.message, true); }
+			}, 'btn--danger');
+		}
+		add('关闭', () => { el.assetMenu.hidden = true; }, 'btn--ghost');
+	}
+	async function refreshAssets() {
+		if (!state.current) return;
+		renderAssets(await api(`/api/assets/${encodeURIComponent(state.slug)}`));
+	}
+	/**
+	 * 在浏览器里先把大图缩到适合上网的尺寸再上传。
+	 * jpeg 出 jpeg，png 出 webp（保住透明），gif / svg 原样不动。
+	 * 压不小就用原图。
+	 */
+	async function compressImage(file) {
+		if (!el.imgCompress.checked) return null;
+		if (!/^image\/(jpeg|png|webp)$/.test(file.type)) return null;
+		const maxEdge = Number(el.imgMaxEdge.value) || 2000;
+		let bitmap;
+		try { bitmap = await createImageBitmap(file); } catch { return null; }
+		const scale = Math.min(1, maxEdge / Math.max(bitmap.width, bitmap.height));
+		if (scale === 1 && file.size < 400 * 1024) { bitmap.close?.(); return null; }
+		const w = Math.round(bitmap.width * scale);
+		const h = Math.round(bitmap.height * scale);
+		const canvas = document.createElement('canvas');
+		canvas.width = w; canvas.height = h;
+		canvas.getContext('2d').drawImage(bitmap, 0, 0, w, h);
+		bitmap.close?.();
+		const isPng = file.type === 'image/png';
+		const type = isPng ? 'image/webp' : 'image/jpeg';
+		const blob = await new Promise((r) => canvas.toBlob(r, type, isPng ? 0.9 : 0.82));
+		if (!blob || blob.size >= file.size) return null;
+		const ext = type === 'image/webp' ? '.webp' : '.jpg';
+		return { blob, name: file.name.replace(/\.[^.]+$/, '') + ext, before: file.size, after: blob.size, w, h };
+	}
+
+	async function uploadFiles(files, intent = 'insert') {
+		if (!state.current) { toast('先打开一篇文章', true); return; }
+		if (isSeason()) { toast('季笺没有自己的图片目录，封面请从通用封面里选', true); return; }
+		const list = Array.from(files).filter((f) => f.type.startsWith('image/') || /\.(jpe?g|png|webp|gif|avif|svg)$/i.test(f.name));
+		if (!list.length) { toast('没有可上传的图片', true); return; }
+		const uploaded = [];
+		let saved = 0;
+		for (const file of list) {
+			try {
+				const shrunk = await compressImage(file);
+				const body = shrunk ? shrunk.blob : file;
+				const headers = { 'x-filename': encodeURIComponent(file.name), 'content-type': body.type || 'application/octet-stream' };
+				if (shrunk) { headers['x-rename'] = encodeURIComponent(shrunk.name); saved += file.size - shrunk.after; }
+				const r = await fetch(`/api/assets/${encodeURIComponent(state.slug)}`, { method: 'POST', headers, body });
+				const data = await r.json();
+				if (!r.ok) throw new Error(data.error || '上传失败');
+				uploaded.push(data);
+			} catch (e) { toast(`${file.name}：${e.message}`, true); }
+		}
+		await refreshAssets();
+		if (!uploaded.length) return;
+		if (intent === 'cover') setCover(uploaded[0].url);
+		else if (intent === 'insert') for (const a of uploaded) insertSnippet('image', a);
+		toast(`已上传 ${uploaded.length} 张${saved > 0 ? `，省下 ${formatBytes(saved)}` : ''}`);
+		return uploaded;
+	}
+	el.fileInput.addEventListener('change', async () => {
+		const intent = state.uploadIntent || 'none';
+		state.uploadIntent = null;
+		await uploadFiles(el.fileInput.files, intent);
+		el.fileInput.value = '';
+		if (intent === 'dialog') renderDialogAssets();
+	});
+	el.imgCompress.checked = LS.get('imgCompress', true);
+	el.imgMaxEdge.value = String(LS.get('imgMaxEdge', 2000));
+	function updateImgNote() {
+		el.imgNote.textContent = el.imgCompress.checked ? 'jpg → jpg，png → webp' : '按原图上传';
+		el.imgMaxEdge.disabled = !el.imgCompress.checked;
+	}
+	el.imgCompress.addEventListener('change', () => { LS.set('imgCompress', el.imgCompress.checked); updateImgNote(); });
+	el.imgMaxEdge.addEventListener('change', () => LS.set('imgMaxEdge', Number(el.imgMaxEdge.value)));
+	updateImgNote();
+
+	el.dropzone.addEventListener('click', () => { state.uploadIntent = 'none'; el.fileInput.click(); });
+	for (const zone of [el.dropzone, el.editorPane]) {
+		zone.addEventListener('dragover', (e) => { e.preventDefault(); zone.classList.add('is-dragover'); });
+		zone.addEventListener('dragleave', () => zone.classList.remove('is-dragover'));
+		zone.addEventListener('drop', async (e) => {
+			e.preventDefault(); zone.classList.remove('is-dragover');
+			if (e.dataTransfer?.files?.length) await uploadFiles(e.dataTransfer.files, zone === el.editorPane ? 'insert' : 'none');
+		});
+	}
+	el.editor.addEventListener('paste', async (e) => {
+		const files = Array.from(e.clipboardData?.files || []).filter((f) => f.type.startsWith('image/'));
+		if (!files.length) return;
+		e.preventDefault();
+		await uploadFiles(files, 'insert');
+	});
+	$('#open-asset-dir').addEventListener('click', async () => {
+		if (!state.current) return;
+		try { await api('/api/open', { method: 'POST', body: JSON.stringify({ path: `public/assets/posts/${state.slug}` }) }); }
+		catch (e) { toast(e.message, true); }
+	});
+
+	function openImageDialog(mode = 'insert') {
+		if (!state.current) { toast('先打开一篇文章', true); return; }
+		state.imageDialogMode = mode;
+		$('h2', el.imageDialog).textContent = mode === 'cover' ? '选择封面' : '插入图片';
+		renderDialogAssets();
+		el.imageDialog.showModal();
+	}
+	function renderDialogAssets() {
+		el.dialogAssetGrid.innerHTML = '';
+		const all = [...(state.current?.assets || []), ...state.covers];
+		if (!all.length) el.dialogAssetGrid.innerHTML = '<p style="grid-column:1/-1;color:var(--faint);font-size:.78rem">还没有图片，先上传一张。</p>';
+		for (const a of all) {
+			el.dialogAssetGrid.append(assetButton(a, {
+				isCover: a.url === el.form.cover.value.trim(),
+				onClick: (asset) => {
+					if (state.imageDialogMode === 'cover') setCover(asset.url); else insertSnippet('image', asset);
+					el.imageDialog.close();
+				},
+			}));
+		}
+	}
+	$('#insert-image-btn').addEventListener('click', () => openImageDialog('insert'));
+	$('#image-cancel').addEventListener('click', () => el.imageDialog.close());
+	$('#dialog-upload-btn').addEventListener('click', () => { state.uploadIntent = 'dialog'; el.fileInput.click(); });
+
+	// ------------------------------------------------------------------ 片段
+	/** 从表单数据生成一张小卡的 HTML，和站点 CSS 里的类名一一对应。 */
+	function recipeCard(data, indent = '') {
+		const id = data.id || `recipe-${Date.now().toString(36)}`;
+		const mini = data.variant === 'mini';
+		const cls = ['recipe-card', 'recipe-card--brief', mini && 'recipe-card--mini'].filter(Boolean).join(' ');
+		const esc = escapeHtml;
+		const lines = [`<section class="${cls}" aria-labelledby="${id}">`];
+		if (data.note) lines.push(`  <p class="recipe-card__annotation">${esc(data.note)}</p>`);
+		lines.push(
+			`  <header class="recipe-card__header">`,
+			`    <div>`,
+			`      <h3 id="${id}">菜谱小卡</h3>`,
+			`    </div>`,
+			`    <dl class="recipe-card__meta">`,
+			`      <div>`,
+			`        <dt>菜名</dt>`,
+			`        <dd>${esc(data.name || '菜名')}</dd>`,
+			`      </div>`,
+		);
+		if (data.point) lines.push(`      <div>`, `        <dt>要点</dt>`, `        <dd>${esc(data.point)}</dd>`, `      </div>`);
+		lines.push(`    </dl>`, `  </header>`, `  <div class="recipe-card__body">`);
+		const ing = (data.ing || []).filter((x) => x.name || x.note);
+		if (ing.length) {
+			lines.push(`    <section>`, `      <h4>原材料</h4>`, `      <ul class="recipe-ingredients">`);
+			for (const x of ing) lines.push(`        <li><span>${esc(x.name)}</span><em>${esc(x.note)}</em></li>`);
+			lines.push(`      </ul>`, `    </section>`);
+		}
+		const steps = (data.steps || []).filter(Boolean);
+		if (steps.length) {
+			lines.push(`    <section>`, `      <h4>步骤</h4>`, `      <ol class="recipe-steps">`);
+			for (const x of steps) lines.push(`        <li>${esc(x)}</li>`);
+			lines.push(`      </ol>`, `    </section>`);
+		}
+		lines.push(`  </div>`, `</section>`);
+		return lines.map((l) => indent + l).join('\n');
+	}
+
+	/** 把已有的一张小卡读回表单能用的数据。 */
+	function parseRecipeCard(html) {
+		const doc = new DOMParser().parseFromString(html, 'text/html');
+		const sec = doc.querySelector('section.recipe-card');
+		if (!sec) return null;
+		const dd = [...sec.querySelectorAll('.recipe-card__meta dd')].map((n) => n.textContent.trim());
+		return {
+			id: sec.querySelector('h3')?.id || '',
+			name: dd[0] || '',
+			point: dd[1] || '',
+			note: sec.querySelector('.recipe-card__annotation')?.textContent.trim() || '',
+			ing: [...sec.querySelectorAll('.recipe-ingredients li')].map((li) => ({
+				name: li.querySelector('span')?.textContent.trim() || '',
+				note: li.querySelector('em')?.textContent.trim() || '',
+			})),
+			steps: [...sec.querySelectorAll('.recipe-steps li')].map((li) => li.textContent.trim()),
+			variant: sec.classList.contains('recipe-card--mini') ? 'mini' : 'brief',
+		};
+	}
+
+	/** 找光标所在的那张小卡（小卡内部还有 <section>，所以要数层级）。 */
+	function findRecipeAt(text, pos) {
+		const open = /<section class="recipe-card[^"]*"[^>]*>/g;
+		let m;
+		while ((m = open.exec(text))) {
+			const start = m.index;
+			const tag = /<\/?section\b/g;
+			tag.lastIndex = start;
+			let depth = 0;
+			let end = -1;
+			let t;
+			while ((t = tag.exec(text))) {
+				if (t[0][1] === '/') {
+					depth -= 1;
+					if (depth === 0) { end = text.indexOf('>', tag.lastIndex) + 1; break; }
+				} else depth += 1;
+			}
+			if (end <= 0) continue;
+			if (pos >= start && pos <= end) return { start, end };
+			open.lastIndex = end;
+		}
+		return null;
+	}
+
+	// ---- 表单行 ----
+	function recipeRow(kind, value = {}) {
+		const row = document.createElement('div');
+		row.className = `rows__item rows__item--${kind === 'ing' ? 'pair' : 'one'}`;
+		if (kind === 'ing') {
+			row.innerHTML = '<input placeholder="主料" /><input placeholder="怎么处理" /><button type="button" class="del" aria-label="删掉这行">×</button>';
+			row.children[0].value = value.name || '';
+			row.children[1].value = value.note || '';
+		} else {
+			row.innerHTML = '<span class="num"></span><input placeholder="这一步做什么" /><button type="button" class="del" aria-label="删掉这步">×</button>';
+			row.children[1].value = value || '';
+		}
+		row.querySelector('.del').addEventListener('click', () => { row.remove(); renumberSteps(); });
+		return row;
+	}
+	function renumberSteps() {
+		$$('.num', el.recipeSteps).forEach((n, i) => { n.textContent = `${i + 1}.`; });
+	}
+	function fillRecipeForm(data) {
+		el.recipeIng.innerHTML = '';
+		el.recipeSteps.innerHTML = '';
+		const f = $('#recipe-form');
+		f.name.value = data.name || '';
+		f.point.value = data.point || '';
+		f.note.value = data.note || '';
+		const ing = data.ing?.length ? data.ing : [{}, {}];
+		for (const x of ing) el.recipeIng.append(recipeRow('ing', x));
+		const steps = data.steps?.length ? data.steps : ['', ''];
+		for (const x of steps) el.recipeSteps.append(recipeRow('step', x));
+		renumberSteps();
+		$$('#recipe-variant button').forEach((b) => b.setAttribute('aria-pressed', b.dataset.variant === (data.variant || 'brief') ? 'true' : 'false'));
+	}
+	function readRecipeForm() {
+		const f = $('#recipe-form');
+		return {
+			id: state.recipeEdit?.id,
+			name: f.name.value.trim(),
+			point: f.point.value.trim(),
+			note: f.note.value.trim(),
+			ing: $$('.rows__item', el.recipeIng).map((r) => ({ name: r.children[0].value.trim(), note: r.children[1].value.trim() })),
+			steps: $$('.rows__item', el.recipeSteps).map((r) => r.children[1].value.trim()),
+			variant: $('#recipe-variant button[aria-pressed="true"]')?.dataset.variant || 'brief',
+		};
+	}
+	function openRecipeDialog(variant) {
+		if (!state.current) { toast('先打开一篇文章', true); return; }
+		if (state.view === 'preview') switchView('split');
+		const found = findRecipeAt(el.editor.value, el.editor.selectionStart ?? 0);
+		if (found) {
+			const data = parseRecipeCard(el.editor.value.slice(found.start, found.end));
+			state.recipeEdit = { ...found, id: data?.id };
+			$('#recipe-dialog-title').textContent = '改这张菜谱小卡';
+			$('#recipe-save').textContent = '保存这张卡';
+			fillRecipeForm(data || {});
+		} else {
+			state.recipeEdit = null;
+			$('#recipe-dialog-title').textContent = '菜谱小卡';
+			$('#recipe-save').textContent = '插入';
+			fillRecipeForm({ variant: variant === 'mini' ? 'mini' : 'brief' });
+		}
+		el.recipeDialog.showModal();
+		setTimeout(() => $('#recipe-form').name.focus(), 30);
+	}
+	$('#recipe-ing-add').addEventListener('click', () => el.recipeIng.append(recipeRow('ing')));
+	$('#recipe-step-add').addEventListener('click', () => { el.recipeSteps.append(recipeRow('step')); renumberSteps(); });
+	$('#recipe-variant').addEventListener('click', (e) => {
+		const b = e.target.closest('[data-variant]');
+		if (!b) return;
+		$$('#recipe-variant button').forEach((x) => x.setAttribute('aria-pressed', x === b ? 'true' : 'false'));
+	});
+	$('#recipe-cancel').addEventListener('click', () => el.recipeDialog.close());
+	$('#recipe-save').addEventListener('click', () => {
+		const data = readRecipeForm();
+		if (!data.name) { toast('至少写个菜名', true); return; }
+		const ta = el.editor;
+		if (state.recipeEdit) {
+			const { start, end } = state.recipeEdit;
+			// 保留原来的缩进（可能在 recipe-card-grid 里）
+			const lineStart = ta.value.lastIndexOf('\n', start - 1) + 1;
+			const indent = ta.value.slice(lineStart, start).match(/^[ \t]*/)[0];
+			const html = recipeCard(data, indent);
+			ta.value = ta.value.slice(0, start) + html + ta.value.slice(end);
+			ta.setSelectionRange(start, start + html.length);
+			toast('小卡已更新');
+		} else {
+			insertSnippet('recipe-html', recipeCard(data));
+			toast('小卡已插入');
+		}
+		el.recipeDialog.close();
+		setDirty(true); updateWordCount();
+		if (state.view === 'split') renderPreview();
+	});
+
+	const SNIPPETS = {
+		h2: () => `\n## 小标题\n\n`,
+		quote: () => `\n> 引用的话\n\n`,
+		hr: () => `\n---\n\n`,
+		image: (a) => `\n![${a?.alt ?? '图注写在这里'}](${a?.url ?? '/assets/posts/' + state.slug + '/image.jpg'})\n\n`,
+		pair: () => `\n<figure class="image-pair">\n  <img src="/assets/posts/${state.slug}/left.jpg" alt="左图说明" loading="lazy" />\n  <img src="/assets/posts/${state.slug}/right.jpg" alt="右图说明" loading="lazy" />\n  <figcaption>两张图的共同图注</figcaption>\n</figure>\n\n`,
+		portrait: () => `\n<figure class="image-portrait">\n  <img src="/assets/posts/${state.slug}/portrait.jpg" alt="竖图说明" loading="lazy" />\n  <figcaption>图注</figcaption>\n</figure>\n\n`,
+		wide: () => `\n<figure class="image-wide">\n  <img src="/assets/posts/${state.slug}/wide.jpg" alt="宽图说明" loading="lazy" />\n  <figcaption>图注</figcaption>\n</figure>\n\n`,
+		'recipe-html': (html) => `\n${html}\n\n`,
+		'recipe-grid': () => `\n<div class="recipe-card-grid">\n\n</div>\n\n`,
+	};
+	function insertSnippet(kind, payload) {
+		if (!state.current) return;
+		const text = SNIPPETS[kind](payload);
+		const ta = el.editor;
+		const start = ta.selectionStart ?? ta.value.length;
+		const end = ta.selectionEnd ?? start;
+		const before = ta.value.slice(0, start);
+		const nl = before.length && !before.endsWith('\n') ? '\n' : '';
+		ta.value = before + nl + text + ta.value.slice(end);
+		let pos = before.length + nl.length + text.length;
+		if (kind === 'recipe-grid') pos = before.length + nl.length + text.indexOf('\n\n</div>') + 1;
+		if (state.view === 'preview') switchView('split');
+		ta.focus(); ta.setSelectionRange(pos, pos);
+		setDirty(true); updateWordCount();
+	}
+	$('#toolbar').addEventListener('click', (e) => {
+		const snip = e.target.closest('[data-snippet]');
+		if (snip) {
+			$('#insert-menu').open = false;
+			if (snip.dataset.snippet === 'recipe' || snip.dataset.snippet === 'recipe-mini') openRecipeDialog(snip.dataset.snippet === 'recipe-mini' ? 'mini' : 'brief');
+			else insertSnippet(snip.dataset.snippet);
+		}
+		const tab = e.target.closest('[data-view]');
+		if (tab) switchView(tab.dataset.view);
+	});
+	document.addEventListener('click', (e) => {
+		const menu = $('#insert-menu');
+		if (menu?.open && !menu.contains(e.target)) menu.open = false;
+	});
+
+	el.editor.addEventListener('input', () => {
+		setDirty(true); updateWordCount();
+		state.blocks = null;
+		if (state.view === 'split') renderPreview();
+	});
+	el.editor.addEventListener('keyup', updateCursor);
+	el.editor.addEventListener('click', updateCursor);
+	el.editor.addEventListener('keydown', (e) => {
+		if (e.key === 'Tab') {
+			e.preventDefault();
+			el.editor.setRangeText('  ', el.editor.selectionStart, el.editor.selectionEnd, 'end');
+			el.editor.dispatchEvent(new Event('input'));
+		}
+	});
+	function updateWordCount() {
+		const { cjk, latin } = countWords(el.editor.value);
+		el.wordCount.textContent = `${cjk} 字${latin ? ` · ${latin} words` : ''}`;
+	}
+	function updateCursor() {
+		el.cursorPos.textContent = `第 ${el.editor.value.slice(0, el.editor.selectionStart).split('\n').length} 行`;
+	}
+	function switchView(view) {
+		state.view = view;
+		LS.set('view', view);
+		$$('[data-view]').forEach((b) => b.setAttribute('aria-selected', b.dataset.view === view ? 'true' : 'false'));
+		if (!state.current) return;
+		const split = view === 'split';
+		el.editorPane.classList.toggle('is-split', split);
+		el.editor.hidden = view === 'preview';
+		el.preview.hidden = view === 'edit';
+		if (view === 'preview' || split) renderPreview();
+		if (view !== 'preview') el.editor.focus();
+	}
+
+	/** 正文按空行切成块；一个块通常对应预览里的一个元素。 */
+	function sourceBlocks(text) {
+		const blocks = [];
+		const re = /\n[ \t]*\n/g;
+		let start = 0;
+		let m;
+		while ((m = re.exec(text))) { blocks.push([start, m.index]); start = re.lastIndex; }
+		blocks.push([start, text.length]);
+		return blocks.filter(([a, b]) => text.slice(a, b).trim());
+	}
+
+	/**
+	 * 分屏滚动同步：先按「第几块」对齐（比纯按比例准得多，图片多的文章尤其明显），
+	 * 块数和预览里的元素数对不上时退回按比例。
+	 */
+	function syncPreviewScroll() {
+		if (state.view !== 'split') return;
+		const doc = el.preview.contentDocument;
+		const root = doc?.documentElement;
+		const prose = doc?.getElementById('p-body');
+		if (!root || !prose) return;
+		const src = el.editor;
+		const max = src.scrollHeight - src.clientHeight;
+		const target = root.scrollHeight - root.clientHeight;
+		if (max <= 0 || target <= 0) return;
+		const ratio = src.scrollTop / max;
+		if (ratio < 0.02) { root.scrollTop = 0; return; }
+
+		if (!state.blocks) state.blocks = sourceBlocks(src.value);
+		const blocks = state.blocks;
+		const kids = prose.children;
+		if (blocks.length > 1 && kids.length > 1 && Math.abs(blocks.length - kids.length) <= Math.max(3, blocks.length * 0.4)) {
+			const offset = ratio * src.value.length;
+			let k = blocks.findIndex(([, end]) => offset < end);
+			if (k < 0) k = blocks.length - 1;
+			const kid = kids[Math.min(k, kids.length - 1)];
+			if (kid) {
+				root.scrollTop = Math.max(0, kid.getBoundingClientRect().top + root.scrollTop - 72);
+				return;
+			}
+		}
+		root.scrollTop = ratio * target;
+	}
+	let scrollFrame = 0;
+	el.editor.addEventListener('scroll', () => {
+		if (scrollFrame) return;
+		scrollFrame = requestAnimationFrame(() => { scrollFrame = 0; syncPreviewScroll(); });
+	}, { passive: true });
+
+	// ------------------------------------------------------------------ 预览
+	let previewReady = false;
+	function previewShell() {
+		return `<!doctype html><html lang="zh-CN" data-theme="${document.documentElement.dataset.theme}"><head><meta charset="utf-8">
+<link rel="stylesheet" href="/katex.css"><link rel="stylesheet" href="/site.css">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Noto+Sans+SC:wght@400;500;600&family=Noto+Serif+SC:wght@400;600;700&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600;8..60,700&display=swap">
+<style>body{padding-bottom:6rem}
+.preview-note{width:min(100% - var(--page-gutter)*2,var(--article-width));margin:1.2rem auto 0;color:var(--color-faint);font-family:var(--font-sans);font-size:.72rem;letter-spacing:.06em;text-transform:uppercase}
+.preview-error{color:#b5563f}</style></head><body>
+<p class="preview-note">Preview · 与线上样式同源</p>
+<article class="article-shell" id="shell" data-category="" data-cover-layout="standard">
+<header class="article-header"><a class="article-category-link" id="p-cat" href="#"></a><h1 id="p-title"></h1><div class="post-meta post-meta--article" id="p-meta"></div><p class="article-description" id="p-desc"></p><figure class="article-cover-frame" id="p-cover" hidden><img class="article-cover" width="1600" height="1000" alt=""><figcaption class="image-caption"></figcaption></figure></header>
+<div class="prose" id="p-body"></div>
+</article></body></html>`;
+	}
+	function ensurePreviewFrame() {
+		return new Promise((resolve) => {
+			if (previewReady && el.preview.contentDocument?.getElementById('p-body')) return resolve();
+			el.preview.addEventListener('load', () => { previewReady = true; resolve(); }, { once: true });
+			el.preview.srcdoc = previewShell();
+		});
+	}
+	const renderPreview = debounce(async () => {
+		if (!state.current || (state.view !== 'preview' && state.view !== 'split')) return;
+		await ensurePreviewFrame();
+		const doc = el.preview.contentDocument;
+		if (!doc) return;
+		doc.documentElement.dataset.theme = document.documentElement.dataset.theme;
+		const shell = doc.getElementById('shell');
+		shell.dataset.category = state.fm.category || '';
+		doc.getElementById('p-cat').hidden = isSeason() || !state.fm.category;
+		shell.dataset.coverLayout = state.fm.coverLayout || 'standard';
+		doc.getElementById('p-cat').textContent = CATEGORY_LABEL[state.fm.category] || '';
+		doc.getElementById('p-title').textContent = state.fm.title || '(无标题)';
+		const desc = doc.getElementById('p-desc');
+		desc.textContent = state.fm.description || '';
+		desc.hidden = !state.fm.description;
+		const date = state.fm.publishDate ? new Date(state.fm.publishDate) : null;
+		doc.getElementById('p-meta').innerHTML = [
+			date && !Number.isNaN(+date) ? `<time>${date.getFullYear()}年${date.getMonth() + 1}月${date.getDate()}日</time>` : '',
+			state.fm.location ? `<span>${escapeHtml(state.fm.location)}</span>` : '',
+		].filter(Boolean).join('');
+		const coverFig = doc.getElementById('p-cover');
+		if (state.fm.cover) {
+			coverFig.hidden = false;
+			const img = coverFig.querySelector('img');
+			img.src = state.fm.cover; img.alt = state.fm.coverAlt || '';
+			img.style.objectPosition = state.fm.coverPosition || '50% 50%';
+			coverFig.querySelector('figcaption').textContent = state.fm.coverAlt || '';
+		} else coverFig.hidden = true;
+		try {
+			const { html } = await api('/api/preview', { method: 'POST', body: JSON.stringify({ body: el.editor.value }) });
+			doc.getElementById('p-body').innerHTML = html;
+			syncPreviewScroll();
+		} catch (e) {
+			doc.getElementById('p-body').innerHTML = `<p class="preview-error">${escapeHtml(e.message)}</p>`;
+		}
+	}, 140);
+
+	// ------------------------------------------------------------------ 校验
+	async function runValidation() {
+		if (!state.current) return;
+		try {
+			const endpoint = isSeason() ? '/api/validate-season' : '/api/validate';
+			const r = await api(endpoint, { method: 'POST', body: JSON.stringify({ frontmatter: state.fm, extra: state.extra, slug: state.slug }) });
+			state.validation = r.validation;
+			renderValidation(r);
+		} catch (e) { toast(e.message, true); }
+	}
+	const scheduleValidation = debounce(() => { runValidation(); if (state.view === 'preview') renderPreview(); }, 220);
+
+	function renderValidation({ validation, yaml }) {
+		const { errors, warnings } = validation;
+		el.checkCount.textContent = errors.length ? errors.length : warnings.length ? warnings.length : '✓';
+		el.checkCount.className = `count ${errors.length ? 'is-error' : warnings.length ? 'is-warn' : ''}`;
+		const form = activeForm();
+		$$('.field', form).forEach((f) => {
+			f.classList.remove('has-error');
+			const h = f.querySelector('.hint');
+			if (h && !h.dataset.keep && !h.querySelector('button')) { h.textContent = ''; h.className = 'hint'; }
+		});
+		for (const w of warnings) {
+			const f = form.querySelector(`.field[data-field="${w.field}"]`);
+			const h = f?.querySelector('.hint');
+			if (h && !h.dataset.keep && !h.querySelector('button')) { h.textContent = w.message; h.className = 'hint is-warn'; }
+		}
+		for (const e of errors) {
+			const f = form.querySelector(`.field[data-field="${e.field}"]`);
+			if (f) f.classList.add('has-error');
+			const h = f?.querySelector('.hint');
+			if (h && !h.dataset.keep && !h.querySelector('button')) { h.textContent = e.message; h.className = 'hint is-error'; }
+		}
+		el.checkList.innerHTML = '';
+		if (!errors.length && !warnings.length) el.checkList.innerHTML = '<li class="is-ok"><span>frontmatter 通过 schema 校验。</span></li>';
+		for (const e of errors) el.checkList.insertAdjacentHTML('beforeend', `<li class="is-error"><span><code>${escapeHtml(e.field)}</code> ${escapeHtml(e.message)}</span></li>`);
+		for (const w of warnings) el.checkList.insertAdjacentHTML('beforeend', `<li class="is-warn"><span><code>${escapeHtml(w.field)}</code> ${escapeHtml(w.message)}</span></li>`);
+		if (yaml) el.yamlPreview.innerHTML = escapeHtml(yaml).replace(/^([\w-]+):/gm, '<b>$1</b>:');
+	}
+
+	// ------------------------------------------------------------------ 保存
+	const scheduleAutosave = debounce(() => {
+		if (state.autosave && state.dirty && !state.stale && state.current) saveNow({ quiet: true }).catch(() => {});
+	}, 1100);
+
+	async function saveSeasonNow({ quiet = false, overwrite = false, force = false } = {}) {
+		readSeasonForm();
+		if (!quiet) setStatus('保存中…');
+		try {
+			const saved = await api(`/api/seasons/${encodeURIComponent(state.slug)}`, {
+				method: 'PUT',
+				body: JSON.stringify({ frontmatter: state.fm, extra: state.extra, body: el.editor.value, mtimeMs: state.mtimeMs, overwrite, force }),
+			});
+			state.current = saved;
+			state.fm = { ...saved.frontmatter };
+			state.mtimeMs = saved.mtimeMs;
+			state.dirty = false;
+			state.stale = false;
+			el.conflict.hidden = true;
+			fillSeasonForm();
+			renderValidation({ validation: saved.validation });
+			setStatus(`已保存 ${new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' })}`, 'is-saved');
+			scheduleGitRefresh();
+			await loadSeasons();
+			renderList();
+			updateTitle();
+			if (!quiet) toast(`已保存 ${saved.file}`);
+			return saved;
+		} catch (error) {
+			if (error.data?.code === 'stale') {
+				state.stale = true; el.conflict.hidden = false;
+				el.conflict.dataset.diskMtime = error.data.mtimeMs;
+				setStatus('未保存：磁盘冲突', 'is-error');
+				return;
+			}
+			if (error.data?.validation) {
+				state.validation = error.data.validation;
+				renderValidation({ validation: error.data.validation });
+				setStatus('未保存：有错误', 'is-error');
+				if (!quiet) {
+					switchPanel('check');
+					if (confirm(`frontmatter 有 ${error.data.validation.errors.length} 处错误，构建会失败。\n\n仍然写进文件？`)) return saveSeasonNow({ quiet, overwrite, force: true });
+				}
+				return;
+			}
+			setStatus('保存失败', 'is-error');
+			if (!quiet) toast(error.message, true);
+			throw error;
+		}
+	}
+
+	async function saveNow({ quiet = false, newSlug, overwrite = false, force = false } = {}) {
+		if (!state.current) return;
+		if (isSeason()) return saveSeasonNow({ quiet, overwrite, force });
+		readForm();
+		if (!quiet) setStatus('保存中…');
+		try {
+			const saved = await api(`/api/posts/${encodeURIComponent(state.slug)}`, {
+				method: 'PUT',
+				body: JSON.stringify({
+					frontmatter: state.fm, extra: state.extra, body: el.editor.value,
+					newSlug: newSlug ?? state.slug, mtimeMs: state.mtimeMs, overwrite, force,
+				}),
+			});
+			const renamed = saved.slug !== state.slug;
+			const wasEditor = document.activeElement === el.editor;
+			adoptPost(saved, { keepCaret: true });
+			if (wasEditor) el.editor.focus();
+			renderValidation({ validation: saved.validation });
+			const time = new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' });
+			setStatus(`已保存 ${time}`, 'is-saved');
+			LS.set('lastSlug', saved.slug);
+			location.hash = saved.slug;
+			if (renamed) { await loadPosts(); toast(`已改名为 ${saved.file}`); }
+			else if (!quiet) toast(`已保存 ${saved.file}`);
+			else updateListEntry(saved);
+			scheduleGitRefresh();
+			return saved;
+		} catch (error) {
+			if (error.data?.code === 'stale') {
+				state.stale = true;
+				el.conflict.hidden = false;
+				el.conflict.dataset.diskMtime = error.data.mtimeMs;
+				setStatus('未保存：磁盘冲突', 'is-error');
+				return;
+			}
+			if (error.data?.validation) {
+				state.validation = error.data.validation;
+				renderValidation({ validation: error.data.validation });
+				setStatus('未保存：有错误', 'is-error');
+				if (!quiet) {
+					switchPanel('check');
+					if (confirm(`frontmatter 有 ${error.data.validation.errors.length} 处错误，构建会失败。\n\n仍然写进文件（稍后再改）？`)) return saveNow({ quiet, newSlug, overwrite, force: true });
+				}
+				return;
+			}
+			setStatus('保存失败', 'is-error');
+			if (!quiet) toast(error.message, true);
+			throw error;
+		}
+	}
+
+	function updateListEntry(saved) {
+		const item = state.posts.find((p) => p.slug === saved.slug);
+		if (!item) { loadPosts(); return; }
+		const w = countWords(saved.body);
+		Object.assign(item, {
+			title: saved.frontmatter.title || '(无标题)',
+			description: saved.frontmatter.description ?? '',
+			publishDate: saved.frontmatter.publishDate ?? '',
+			category: saved.frontmatter.category ?? '',
+			tags: saved.frontmatter.tags ?? [],
+			draft: Boolean(saved.frontmatter.draft),
+			unlisted: Boolean(saved.frontmatter.unlisted),
+			featured: Boolean(saved.frontmatter.featured),
+			words: w.cjk + w.latin,
+			mtimeMs: saved.mtimeMs,
+		});
+		renderList();
+	}
+
+	async function publishCurrent() {
+		if (!state.current) return;
+		const f = activeForm();
+		if (f.draft.checked) { f.draft.checked = false; isSeason() ? readSeasonForm() : readForm(); }
+		const saved = await saveNow();
+		if (saved && !saved.frontmatter.draft) toast('已发布（draft: false）');
+	}
+
+	$('#conflict-reload').addEventListener('click', async () => {
+		state.stale = false; state.dirty = false;
+		if (isSeason()) await openSeason(state.slug); else await openPost(state.slug, { silent: true });
+		toast('已载入磁盘上的版本');
+	});
+	$('#conflict-overwrite').addEventListener('click', async () => {
+		state.stale = false;
+		state.mtimeMs = Number(el.conflict.dataset.diskMtime) || state.mtimeMs;
+		await saveNow({ overwrite: true });
+		el.conflict.hidden = true;
+	});
+
+	// ------------------------------------------------------------------ 速记 / 追加
+	function updateQuickSlug() {
+		const date = el.quickDate.value || state.meta.today;
+		el.quickPrefix.textContent = `${date}-`;
+		const suffix = slugifyAscii(el.quickSuffix.value);
+		el.quickSlugPreview.textContent = `/blog/${suffix ? `${date}-${suffix}` : date}/`;
+	}
+	function updateQuickCount() {
+		const text = state.quickMode === 'new' ? el.quickBody.value : el.quickAppendBody.value;
+		const { cjk, latin } = countWords(text);
+		el.quickCount.textContent = text.trim() ? `${cjk} 字${latin ? ` · ${latin} words` : ''}` : '';
+	}
+	function updateAppendPreview() {
+		const d = new Date(el.quickDate.value || state.meta.today);
+		el.quickAppendPreview.textContent = el.quickHeading.checked ? `## ${d.getMonth() + 1} 月 ${d.getDate()} 日` : '（直接接在末尾）';
+	}
+	function renderQuickTags() {
+		$$('.tag', el.quickTags).forEach((t) => t.remove());
+		for (const tag of state.quickTags) {
+			const span = document.createElement('span');
+			span.className = 'tag';
+			span.innerHTML = `${escapeHtml(tag)}<button type="button" aria-label="删除标签">×</button>`;
+			span.querySelector('button').addEventListener('click', () => {
+				state.quickTags = state.quickTags.filter((t) => t !== tag); renderQuickTags();
+			});
+			el.quickTags.insertBefore(span, el.quickTagEntry);
+		}
+		renderTagSuggest(el.quickTagSuggest, state.quickTags, (tag) => { state.quickTags.push(tag); renderQuickTags(); });
+	}
+	function fillTargets() {
+		if (!el.quickTarget) return;
+		const keep = el.quickTarget.value;
+		const sorted = [...state.posts].sort((a, b) => (b.updatedDate || b.publishDate || '').localeCompare(a.updatedDate || a.publishDate || ''));
+		el.quickTarget.innerHTML = sorted.map((p) => `<option value="${escapeHtml(p.slug)}">${escapeHtml(p.title)} · ${escapeHtml(CATEGORY_LABEL[p.category] || '')}${p.draft ? ' · 草稿' : ''}</option>`).join('');
+		const preferred = keep || state.slug || sorted.find((p) => p.category === 'thoughts')?.slug;
+		if (preferred) el.quickTarget.value = preferred;
+	}
+
+	function openQuick(mode = 'new') {
+		state.quickMode = mode;
+		el.quickScrim.hidden = false;
+		$$('[data-qmode]').forEach((b) => b.setAttribute('aria-selected', b.dataset.qmode === mode ? 'true' : 'false'));
+		el.quickNewFields.style.display = mode === 'new' ? 'grid' : 'none';
+		el.quickAppendFields.style.display = mode === 'append' ? 'grid' : 'none';
+		$('#quick-draft').hidden = mode === 'append';
+		$('#quick-publish').innerHTML = mode === 'append' ? '追加 <kbd>⌘↩</kbd>' : '发布 <kbd>⌘↩</kbd>';
+		if (mode === 'new') {
+			if (!el.quickDate.value) el.quickDate.value = state.meta.today;
+			if (!el.quickCategory.value) el.quickCategory.value = state.meta.quickDefaults.category;
+			if (!state.quickTags.length) state.quickTags = [...(state.meta.quickDefaults.tags || [])];
+			renderQuickTags(); updateQuickSlug();
+			setTimeout(() => el.quickTitle.focus(), 30);
+		} else {
+			fillTargets(); updateAppendPreview();
+			setTimeout(() => el.quickAppendBody.focus(), 30);
+		}
+		updateQuickCount();
+	}
+	function closeQuick() {
+		const text = state.quickMode === 'new' ? (el.quickTitle.value + el.quickBody.value) : el.quickAppendBody.value;
+		if (text.trim() && !confirm('速记里的内容还没保存，关掉吗？')) return;
+		el.quickScrim.hidden = true;
+		el.quickTitle.value = ''; el.quickBody.value = ''; el.quickSuffix.value = '';
+		el.quickAppendBody.value = '';
+		state.quickTags = [];
+		updateQuickCount();
+	}
+	async function submitQuick(draft) {
+		if (state.quickMode === 'append') {
+			const body = el.quickAppendBody.value.trim();
+			if (!body) { toast('还没写内容', true); return; }
+			try {
+				const saved = await api('/api/append', {
+					method: 'POST',
+					body: JSON.stringify({
+						slug: el.quickTarget.value, body,
+						date: el.quickDate.value || state.meta.today,
+						heading: el.quickHeading.checked, separator: el.quickSeparator.checked,
+					}),
+				});
+				el.quickAppendBody.value = '';
+				el.quickScrim.hidden = true;
+				await loadPosts();
+				state.dirty = false;
+				await openPost(saved.slug, { silent: true });
+				el.editor.focus();
+				el.editor.setSelectionRange(el.editor.value.length, el.editor.value.length);
+				el.editor.scrollTop = el.editor.scrollHeight;
+				toast(`已追加到《${saved.frontmatter.title}》，updatedDate 已更新`);
+			} catch (e) { toast(e.message, true); }
+			return;
+		}
+		const title = el.quickTitle.value.trim();
+		if (!title) { toast('标题不能为空', true); el.quickTitle.focus(); return; }
+		try {
+			const post = await api('/api/quick', {
+				method: 'POST',
+				body: JSON.stringify({
+					title, body: el.quickBody.value,
+					category: el.quickCategory.value,
+					publishDate: el.quickDate.value || state.meta.today,
+					slugSuffix: el.quickSuffix.value,
+					tags: state.quickTags,
+					draft,
+					language: state.meta.quickDefaults.language,
+				}),
+			});
+			el.quickTitle.value = ''; el.quickBody.value = ''; el.quickSuffix.value = '';
+			el.quickScrim.hidden = true;
+			await loadPosts();
+			state.dirty = false;
+			await openPost(post.slug, { silent: true });
+			toast(draft ? `已存草稿 ${post.file}` : `已发布 ${post.file}`);
+		} catch (e) { toast(e.message, true); }
+	}
+
+	$('#quick-btn').addEventListener('click', () => openQuick('new'));
+	$('#empty-quick-btn').addEventListener('click', () => openQuick('new'));
+	$('#append-btn').addEventListener('click', () => {
+		if (!state.current) { toast('先打开一篇文章', true); return; }
+		fillTargets(); el.quickTarget.value = state.slug; openQuick('append');
+	});
+	$('#quick-cancel').addEventListener('click', closeQuick);
+	$('#quick-publish').addEventListener('click', () => submitQuick(false));
+	$('#quick-draft').addEventListener('click', () => submitQuick(true));
+	$$('[data-qmode]').forEach((b) => b.addEventListener('click', () => openQuick(b.dataset.qmode)));
+	el.quickScrim.addEventListener('mousedown', (e) => { if (e.target === el.quickScrim) closeQuick(); });
+	el.quickSuffix.addEventListener('input', () => {
+		// 边打边规范：空格变连字符，其他符号丢掉，这样看到的就是链接里真正的样子。
+		const raw = el.quickSuffix.value;
+		const clean = raw.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+/, '').slice(0, 48);
+		if (clean !== raw) {
+			const atEnd = el.quickSuffix.selectionStart === raw.length;
+			el.quickSuffix.value = clean;
+			if (atEnd) el.quickSuffix.setSelectionRange(clean.length, clean.length);
+		}
+		updateQuickSlug();
+	});
+	el.quickDate.addEventListener('change', () => { updateQuickSlug(); updateAppendPreview(); });
+	el.quickHeading.addEventListener('change', updateAppendPreview);
+	el.quickTitle.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); el.quickBody.focus(); } });
+	el.quickBody.addEventListener('input', updateQuickCount);
+	el.quickAppendBody.addEventListener('input', updateQuickCount);
+	el.quickTagEntry.addEventListener('keydown', (e) => {
+		if (e.key === 'Enter' || e.key === ',' || e.key === '，') {
+			e.preventDefault();
+			const parts = el.quickTagEntry.value.split(/[,，]/).map((s) => s.trim()).filter(Boolean);
+			state.quickTags = [...new Set([...state.quickTags, ...parts])];
+			el.quickTagEntry.value = ''; renderQuickTags();
+		} else if (e.key === 'Backspace' && !el.quickTagEntry.value && state.quickTags.length) {
+			state.quickTags.pop(); renderQuickTags();
+		}
+	});
+
+	// ------------------------------------------------------------------ ⌘K
+	const COMMANDS = [
+		{ t: '速记一条随笔', sub: 'N', run: () => openQuick('new') },
+		{ t: '追加到某篇文章', sub: '', run: () => openQuick('append') },
+		{ t: '新建完整文章', sub: '', run: () => openNewDialog() },
+		{ t: '新建季笺', sub: '', run: () => openSeasonDialog() },
+		{ t: '菜谱小卡（表单）', sub: '', run: () => openRecipeDialog('brief') },
+		{ t: '分屏：左写右看', sub: '⌘E', run: () => switchView('split') },
+		{ t: '只看正文', sub: '⌘E', run: () => switchView('edit') },
+		{ t: '收起 / 展开右栏', sub: '⌘\\', run: () => togglePanel() },
+		{ t: '切换深浅色', sub: '', run: () => applyTheme(document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark') },
+		{ t: '提交并推送到 GitHub', sub: '', run: () => $('#git-commit').click() },
+		{ t: '从 GitHub 拉取', sub: '', run: () => $('#git-pull').click() },
+	];
+	function openPalette() {
+		el.paletteScrim.hidden = false;
+		el.paletteInput.value = '';
+		renderPalette();
+		setTimeout(() => el.paletteInput.focus(), 20);
+	}
+	function closePalette() { el.paletteScrim.hidden = true; }
+	function renderPalette() {
+		const q = el.paletteInput.value.trim().toLowerCase();
+		const posts = state.posts
+			.filter((p) => !q || [p.title, p.slug, p.description, ...(p.tags || [])].join(' ').toLowerCase().includes(q))
+			.slice(0, 12)
+			.map((p) => ({
+				t: p.title,
+				sub: `${p.publishDate} · ${CATEGORY_LABEL[p.category] || ''}${p.draft ? ' · 草稿' : ''}`,
+				run: () => openPost(p.slug),
+			}));
+		const seasons = state.seasons
+			.filter((x) => !q || [x.title, x.slug, x.description].join(' ').toLowerCase().includes(q))
+			.slice(0, 4)
+			.map((x) => ({ t: x.title, sub: `季笺 · ${x.year} ${x.season}${x.draft ? ' · 草稿' : ''}`, run: () => openSeason(x.slug) }));
+		const cmds = COMMANDS.filter((c) => !q || c.t.toLowerCase().includes(q));
+		state.paletteItems = [...posts, ...seasons, ...cmds];
+		state.paletteIndex = 0;
+		el.paletteList.innerHTML = '';
+		if (!state.paletteItems.length) {
+			el.paletteList.innerHTML = '<li style="padding:.7rem .8rem;color:var(--faint);font-size:.8rem">没有匹配。</li>';
+			return;
+		}
+		state.paletteItems.forEach((item, i) => {
+			const li = document.createElement('li');
+			li.setAttribute('aria-selected', i === 0 ? 'true' : 'false');
+			const b = document.createElement('button');
+			b.type = 'button';
+			b.innerHTML = `<span class="t">${escapeHtml(item.t)}</span><span class="sub">${escapeHtml(item.sub)}</span>`;
+			b.addEventListener('click', () => { closePalette(); item.run(); });
+			b.addEventListener('mouseenter', () => selectPalette(i));
+			li.append(b);
+			el.paletteList.append(li);
+		});
+	}
+	function selectPalette(i) {
+		const items = $$('li', el.paletteList);
+		if (!items.length) return;
+		state.paletteIndex = (i + items.length) % items.length;
+		items.forEach((li, n) => li.setAttribute('aria-selected', n === state.paletteIndex ? 'true' : 'false'));
+		items[state.paletteIndex].scrollIntoView({ block: 'nearest' });
+	}
+	el.paletteInput.addEventListener('input', renderPalette);
+	el.paletteInput.addEventListener('keydown', (e) => {
+		if (e.key === 'ArrowDown') { e.preventDefault(); selectPalette(state.paletteIndex + 1); }
+		else if (e.key === 'ArrowUp') { e.preventDefault(); selectPalette(state.paletteIndex - 1); }
+		else if (e.key === 'Enter') {
+			e.preventDefault();
+			const item = state.paletteItems[state.paletteIndex];
+			if (item) { closePalette(); item.run(); }
+		}
+	});
+	el.paletteScrim.addEventListener('mousedown', (e) => { if (e.target === el.paletteScrim) closePalette(); });
+	$('#palette-btn').addEventListener('click', openPalette);
+
+	// ------------------------------------------------------------------ git 同步
+	const gitEl = {
+		bar: $('#git-bar'), counts: $('#git-counts'), dialog: $('#git-dialog'),
+		files: $('#git-dialog-files'), message: $('#git-message'), note: $('#git-dialog-note'),
+		doPush: $('#git-do-push'),
+	};
+	let gitState = { available: false, files: [] };
+
+	function renderGit() {
+		if (!gitState.available) { gitEl.bar.hidden = true; return; }
+		gitEl.bar.hidden = false;
+		const { branch, ahead, behind, files, upstream } = gitState;
+		const bits = [`<span>${escapeHtml(branch || '?')}</span>`];
+		if (behind) bits.push(`<span class="behind">↓ ${behind} 待拉取</span>`);
+		if (ahead) bits.push(`<span class="warn">↑ ${ahead} 待推送</span>`);
+		if (files.length) bits.push(`<span class="warn"><b>${files.length}</b> 处改动</span>`);
+		if (!behind && !ahead && !files.length) bits.push('<span class="ok">和 GitHub 一致</span>');
+		if (!upstream) bits.push('<span class="warn">没有上游分支</span>');
+		gitEl.counts.innerHTML = bits.join('');
+		$('#git-pull').disabled = !behind;
+		$('#git-commit').disabled = !files.length && !ahead;
+		$('#git-commit').textContent = files.length ? '提交并推送…' : ahead ? `推送 ${ahead} 个提交` : '提交并推送…';
+	}
+
+	async function refreshGit({ fetch: doFetch = false } = {}) {
+		try {
+			gitState = doFetch ? await api('/api/git/fetch', { method: 'POST' }) : await api('/api/git');
+			renderGit();
+		} catch (e) {
+			if (doFetch) toast(e.message, true);
+		}
+	}
+	const scheduleGitRefresh = debounce(() => refreshGit(), 1500);
+
+	function statusClass(st) {
+		if (st.includes('A') || st === '??') return 'a';
+		if (st.includes('D')) return 'd';
+		return '';
+	}
+
+	$('#git-refresh').addEventListener('click', async () => {
+		gitEl.bar.classList.add('is-busy');
+		await refreshGit({ fetch: true });
+		gitEl.bar.classList.remove('is-busy');
+		toast(gitState.behind ? `远程有 ${gitState.behind} 个新提交，可以拉取了` : '已经是最新的');
+	});
+
+	$('#git-pull').addEventListener('click', async () => {
+		if (state.dirty) await saveNow({ quiet: true }).catch(() => {});
+		gitEl.bar.classList.add('is-busy');
+		try {
+			gitState = await api('/api/git/pull', { method: 'POST' });
+			renderGit();
+			// 磁盘上的文件被换掉了，重新读一遍列表和当前这篇
+			await Promise.all([loadPosts(), loadSeasons()]);
+			if (state.current) {
+				const slug = state.slug;
+				state.dirty = false;
+				if (isSeason()) await openSeason(slug); else await openPost(slug, { silent: true });
+			}
+			toast('已拉取远程的改动');
+		} catch (e) {
+			toast(e.data?.hint || e.message, true);
+		} finally {
+			gitEl.bar.classList.remove('is-busy');
+		}
+	});
+
+	$('#git-commit').addEventListener('click', async () => {
+		if (state.dirty) await saveNow({ quiet: true }).catch(() => {});
+		await refreshGit();
+		if (!gitState.files.length && gitState.ahead) {
+			// 没有新改动，只是本地还有提交没推上去
+			gitEl.bar.classList.add('is-busy');
+			try {
+				gitState = await api('/api/git/push', { method: 'POST' });
+				renderGit();
+				toast('已推送到 GitHub');
+			} catch (e) {
+				toast(e.message, true);
+			} finally {
+				gitEl.bar.classList.remove('is-busy');
+			}
+			return;
+		}
+		if (!gitState.files.length) { toast('没有需要提交的改动'); return; }
+		gitEl.files.innerHTML = gitState.files
+			.map((f) => `<li><span class="st ${statusClass(f.status)}">${escapeHtml(f.status || 'M')}</span><span>${escapeHtml(f.path)}</span></li>`)
+			.join('');
+		gitEl.message.value = gitState.suggested || '更新';
+		gitEl.note.textContent = `${gitState.files.length} 处改动，会 git add -A 后提交到 ${gitState.branch}${gitState.upstream ? ` 并推送到 ${gitState.upstream}` : ''}。`;
+		gitEl.dialog.showModal();
+		setTimeout(() => { gitEl.message.focus(); gitEl.message.select(); }, 30);
+	});
+
+	$('#git-cancel').addEventListener('click', () => gitEl.dialog.close());
+	$('#git-confirm').addEventListener('click', async () => {
+		const message = gitEl.message.value.trim();
+		if (!message) { toast('写一句提交信息', true); return; }
+		const push = gitEl.doPush.checked;
+		$('#git-confirm').disabled = true;
+		$('#git-confirm').textContent = push ? '推送中…' : '提交中…';
+		try {
+			gitState = await api('/api/git/commit', { method: 'POST', body: JSON.stringify({ message, push }) });
+			renderGit();
+			gitEl.dialog.close();
+			toast(push ? '已提交并推送到 GitHub' : '已提交到本地（没有推送）');
+		} catch (e) {
+			toast(e.message, true);
+			if (e.data?.committed) { gitState = e.data; renderGit(); gitEl.dialog.close(); }
+		} finally {
+			$('#git-confirm').disabled = false;
+			$('#git-confirm').textContent = '提交并推送';
+		}
+	});
+	gitEl.message.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); $('#git-confirm').click(); } });
+
+	// ------------------------------------------------------------------ 面板 / 快捷键
+	function togglePanel() {
+		el.app.classList.toggle('panel-hidden');
+		LS.set('panelHidden', el.app.classList.contains('panel-hidden'));
+	}
+	$('#panel-toggle').addEventListener('click', togglePanel);
+	if (LS.get('panelHidden', false)) el.app.classList.add('panel-hidden');
+
+	function switchPanel(name) {
+		state.panel = name;
+		el.app.classList.remove('panel-hidden');
+		$$('[data-panel]').forEach((b) => b.setAttribute('aria-selected', b.dataset.panel === name ? 'true' : 'false'));
+		$('#panel-meta').hidden = name !== 'meta';
+		$('#panel-images').hidden = name !== 'images';
+		$('#panel-check').hidden = name !== 'check';
+	}
+	$('.panel__tabs').addEventListener('click', (e) => { const b = e.target.closest('[data-panel]'); if (b) switchPanel(b.dataset.panel); });
+
+	document.addEventListener('keydown', (e) => {
+		const mod = e.metaKey || e.ctrlKey;
+		const quickOpen = !el.quickScrim.hidden;
+		const paletteOpen = !el.paletteScrim.hidden;
+
+		if (e.key === 'Escape') {
+			if (paletteOpen) { e.preventDefault(); closePalette(); return; }
+			if (quickOpen) { e.preventDefault(); closeQuick(); return; }
+		}
+		if (mod && e.key.toLowerCase() === 'k') { e.preventDefault(); paletteOpen ? closePalette() : openPalette(); return; }
+
+		if (quickOpen) {
+			if (mod && e.key === 'Enter') { e.preventDefault(); submitQuick(false); }
+			else if (mod && e.key.toLowerCase() === 's') { e.preventDefault(); submitQuick(state.quickMode !== 'append'); }
+			return;
+		}
+		if (paletteOpen) return;
+
+		if (mod && e.key.toLowerCase() === 's') { e.preventDefault(); saveNow(); return; }
+		if (mod && e.key === 'Enter') { e.preventDefault(); publishCurrent(); return; }
+		if (mod && e.key.toLowerCase() === 'e' && state.current) {
+			e.preventDefault();
+			const order = ['edit', 'split', 'preview'];
+			switchView(order[(order.indexOf(state.view) + 1) % order.length]);
+			return;
+		}
+		if (mod && e.key === '\\') { e.preventDefault(); togglePanel(); return; }
+		if (!mod && !isTyping()) {
+			if (e.key === 'n' || e.key === 'N') { e.preventDefault(); openQuick('new'); }
+			else if (e.key === '/') { e.preventDefault(); el.filterInput.focus(); }
+		}
+	});
+	window.addEventListener('beforeunload', (e) => { if (state.dirty) { e.preventDefault(); e.returnValue = ''; } });
+
+	// ------------------------------------------------------------------ 新建 / 删除
+	function openNewDialog() {
+		el.newForm.reset();
+		el.newForm.publishDate.value = state.meta?.today ?? '';
+		el.newDialog.showModal();
+		el.newForm.title.focus();
+	}
+	function openSeasonDialog() {
+		const f = $('#season-new-form');
+		f.reset();
+		const now = new Date();
+		f.year.value = String(now.getFullYear());
+		const m = now.getMonth() + 1;
+		f.season.value = m <= 2 || m === 12 ? '冬' : m <= 5 ? '春' : m <= 8 ? '夏' : '秋';
+		f.slug.value = `${now.getFullYear()}-${{ 春: 'spring', 夏: 'summer', 秋: 'autumn', 冬: 'winter' }[f.season.value]}`;
+		f.title.value = `这一季：${now.getFullYear()} ${f.season.value}`;
+		$('#season-dialog').showModal();
+		f.title.focus();
+	}
+	$('#season-new-cancel').addEventListener('click', () => $('#season-dialog').close());
+	$('#season-new-form').addEventListener('submit', async (e) => {
+		e.preventDefault();
+		const f = $('#season-new-form');
+		if (!f.reportValidity()) return;
+		try {
+			const season = await api('/api/seasons', {
+				method: 'POST',
+				body: JSON.stringify({
+					title: f.title.value.trim(), slug: f.slug.value.trim(), season: f.season.value,
+					year: Number(f.year.value), description: f.description.value.trim(), body: '',
+				}),
+			});
+			$('#season-dialog').close();
+			await loadSeasons();
+			state.dirty = false;
+			await openSeason(season.slug);
+			toast(`已创建 ${season.file}（草稿）`);
+		} catch (err) { toast(err.message, true); }
+	});
+
+	$('#new-post-btn').addEventListener('click', () => (state.filter === 'seasons' ? openSeasonDialog() : openNewDialog()));
+	$('#empty-new-btn').addEventListener('click', openNewDialog);
+	$('#new-cancel').addEventListener('click', () => el.newDialog.close());
+	el.newForm.addEventListener('submit', async (e) => {
+		e.preventDefault();
+		if (!el.newForm.reportValidity()) return;
+		try {
+			const post = await api('/api/posts', {
+				method: 'POST',
+				body: JSON.stringify({
+					title: el.newForm.title.value.trim(), slug: el.newForm.slug.value.trim(),
+					category: el.newForm.category.value, publishDate: el.newForm.publishDate.value, body: '',
+				}),
+			});
+			el.newDialog.close();
+			await loadPosts();
+			state.dirty = false;
+			await openPost(post.slug, { silent: true });
+			toast(`已创建 ${post.file}（草稿）`);
+		} catch (err) { toast(err.message, true); }
+	});
+
+	$('#delete-post-btn').addEventListener('click', async () => {
+		if (!state.current) return;
+		const what = isSeason() ? '这篇季笺' : `「${state.fm.title}」和它的图片目录`;
+		if (!confirm(`把${what}移到 tools/blog-editor/.trash？`)) return;
+		try {
+			await api(`/api/${isSeason() ? 'seasons' : 'posts'}/${encodeURIComponent(state.slug)}`, { method: 'DELETE' });
+			if (isSeason()) await loadSeasons();
+			state.current = null; state.slug = ''; state.dirty = false; state.kind = 'post';
+			el.empty.hidden = false; el.editor.hidden = true; el.preview.hidden = true;
+			el.editorPane.classList.remove('is-split');
+			el.editorFoot.hidden = true; el.openDev.hidden = true; el.editor.value = '';
+			el.seasonForm.hidden = true; el.form.hidden = false;
+			updateTitle(); setStatus('');
+			location.hash = '';
+			LS.set('lastOpen', null);
+			await loadPosts();
+			toast('已移到回收目录');
+		} catch (e) { toast(e.message, true); }
+	});
+
+	// ------------------------------------------------------------------ 启动
+	async function boot() {
+		state.meta = await api('/api/meta');
+		for (const select of [el.form.category, el.newForm.category, el.quickCategory]) {
+			select.innerHTML = state.meta.categories.map((c) => `<option value="${c}">${CATEGORY_LABEL[c] || c}</option>`).join('');
+		}
+		el.form.coverLayout.innerHTML = state.meta.coverLayouts.map((l) => `<option value="${l}">${LAYOUT_LABEL[l] || l}</option>`).join('');
+		const seasonOptions = (state.meta.seasonNames || ['春', '夏', '秋', '冬']).map((n) => `<option value="${n}">${n}</option>`).join('');
+		el.seasonForm.season.innerHTML = seasonOptions;
+		$('#season-new-form').season.innerHTML = seasonOptions;
+		if (['edit', 'split', 'preview'].includes(LS.get('view', 'edit'))) state.view = LS.get('view', 'edit');
+		el.quickDate.value = state.meta.today;
+		el.quickCategory.value = state.meta.quickDefaults.category;
+		updateQuickSlug();
+		state.covers = await api('/api/public-images').catch(() => []);
+		await Promise.all([loadPosts(), loadSeasons(), refreshGit()]);
+		const hash = decodeURIComponent(location.hash.slice(1));
+		const last = LS.get('lastOpen', null);
+		const target = hash
+			? (hash.startsWith('season/') ? { kind: 'season', slug: hash.slice(7) } : { kind: 'post', slug: hash })
+			: last;
+		if (target?.kind === 'season' && state.seasons.some((x) => x.slug === target.slug)) await openSeason(target.slug);
+		else if (target?.slug && state.posts.some((p) => p.slug === target.slug)) await openPost(target.slug, { silent: true });
+	}
+	boot().catch((e) => toast(`启动失败：${e.message}`, true));
+})();
+</script>
+</body>
+</html>
