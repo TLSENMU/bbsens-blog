@@ -11,13 +11,41 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 			<input id="search-input" name="q" type="search" placeholder="输入关键词" autocomplete="off" />
 			<button type="submit">搜索</button>
 		</form>
-		<div id="search-results" class="post-list post-list--compact" aria-live="polite"></div>
+		<p class="search-status" id="search-status" aria-live="polite"></p>
+		<p class="search-hint" id="search-hint">输入地名、菜名、人名或任何一个词。也可以从 <a href="/tags/">标签</a> 或 <a href="/archive/">归档</a> 慢慢翻。</p>
+		<div id="search-results" class="post-list post-list--compact"></div>
 	</section>
 	<script>
 		const form = document.querySelector<HTMLFormElement>('.search-form');
 		const input = document.querySelector<HTMLInputElement>('#search-input');
 		const results = document.querySelector<HTMLDivElement>('#search-results');
-		let index: Array<{ title: string; description: string; url: string; tags: string[]; category: string; body: string; readingTime: string }> = [];
+		const status = document.querySelector<HTMLParagraphElement>('#search-status');
+		const hint = document.querySelector<HTMLParagraphElement>('#search-hint');
+		const categoryLabels: Record<string, string> = { journey: '在路上', food: '食', people: '物与人', thoughts: '思绪' };
+		let index: Array<{ title: string; description: string; url: string; tags: string[]; category: string; body: string; readingTime: string; publishDate: string }> = [];
+		let currentQuery = '';
+
+		function highlight(parent: Element, text: string) {
+			const query = currentQuery;
+			if (!query) return appendText(parent, text);
+			const lower = text.toLowerCase();
+			let cursor = 0;
+			let hit = lower.indexOf(query, cursor);
+			while (hit !== -1) {
+				appendText(parent, text.slice(cursor, hit));
+				const mark = document.createElement('mark');
+				mark.textContent = text.slice(hit, hit + query.length);
+				parent.append(mark);
+				cursor = hit + query.length;
+				hit = lower.indexOf(query, cursor);
+			}
+			appendText(parent, text.slice(cursor));
+		}
+
+		function formatDate(iso: string) {
+			const date = new Date(iso);
+			return Number.isNaN(date.getTime()) ? '' : `${date.getFullYear()}年${date.getMonth() + 1}月${date.getDate()}日`;
+		}
 
 		async function loadIndex() {
 			if (index.length === 0) {
@@ -32,6 +60,8 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 		function render(items: typeof index) {
 			if (!results) return;
 			results.replaceChildren();
+			if (hint) hint.hidden = true;
+			if (status) status.textContent = items.length ? `找到 ${items.length} 篇` : '';
 			if (items.length === 0) {
 				const empty = document.createElement('p');
 				empty.className = 'page-description';
@@ -42,31 +72,42 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 
 			for (const item of items) {
 				const article = document.createElement('article');
-				article.className = 'post-entry';
+				article.className = 'post-entry post-entry--no-cover';
+				article.dataset.category = item.category;
 				const content = document.createElement('div');
 				content.className = 'post-entry__content';
 				const meta = document.createElement('div');
 				meta.className = 'post-meta';
 
+				const time = document.createElement('time');
+				time.dateTime = item.publishDate;
+				time.textContent = formatDate(item.publishDate);
+				meta.append(time);
+				const category = document.createElement('a');
+				category.className = 'post-meta__category';
+				category.href = `/${item.category}/`;
+				category.textContent = categoryLabels[item.category] ?? item.category;
+				meta.append(category);
 				for (const tag of item.tags) {
 					const span = document.createElement('span');
 					appendText(span, `#${tag}`);
 					meta.append(span);
 				}
-				const time = document.createElement('span');
-				time.textContent = item.readingTime;
-				meta.append(time);
+				const reading = document.createElement('span');
+				reading.textContent = item.readingTime;
+				meta.append(reading);
 
 				const heading = document.createElement('h2');
 				const link = document.createElement('a');
 				link.href = item.url;
-				link.textContent = item.title;
+				highlight(link, item.title);
 				heading.append(link);
 
 				const description = document.createElement('p');
-				description.textContent = item.description;
+				if (item.description) highlight(description, item.description);
 
-				content.append(meta, heading, description);
+				content.append(meta, heading);
+				if (item.description) content.append(description);
 				article.append(content);
 				results.append(article);
 			}
@@ -75,8 +116,11 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 		async function runSearch(query: string) {
 			await loadIndex();
 			const normalized = query.trim().toLowerCase();
+			currentQuery = normalized;
 			if (!normalized) {
 				results?.replaceChildren();
+				if (status) status.textContent = '';
+				if (hint) hint.hidden = false;
 				return;
 			}
 			render(

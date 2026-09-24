@@ -10,7 +10,7 @@ export async function GET() {
 		site: siteConfig.siteUrl,
 		items: posts.map((post) => ({
 			title: post.data.title,
-			description: post.data.description,
+			description: post.data.description ?? post.data.title,
 			pubDate: post.data.publishDate,
 			link: getPostUrl(post),
 		})),

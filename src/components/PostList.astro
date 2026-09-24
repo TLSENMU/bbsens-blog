@@ -6,18 +6,21 @@ import { estimateReadingTime, getCoverLayout, getPostUrl } from '../lib/posts';
 interface Props {
 	posts: BlogPost[];
 	compact?: boolean;
+	hideCategory?: boolean;
+	empty?: string;
 }
 
-const { posts, compact = false } = Astro.props;
+const { posts, compact = false, hideCategory = false, empty = '这里还没有文章。' } = Astro.props;
 ---
 
 <div class:list={['post-list', compact && 'post-list--compact']}>
+	{posts.length === 0 && <p class="post-list__empty">{empty}</p>}
 	{posts.map((post) => (
 		<article class:list={['post-entry', !post.data.cover && 'post-entry--no-cover']} data-category={post.data.category} data-cover-layout={getCoverLayout(post)}>
 			<div class="post-entry__content">
-				<PostMeta post={post} readingTime={estimateReadingTime(post.body)} />
+				<PostMeta post={post} readingTime={estimateReadingTime(post.body)} hideCategory={hideCategory} />
 				<h2><a href={getPostUrl(post)}>{post.data.title}</a></h2>
-				<p>{post.data.description}</p>
+				{post.data.description && <p>{post.data.description}</p>}
 			</div>
 			{!compact && post.data.cover && (
 				<a class="post-entry__cover" href={getPostUrl(post)} aria-label={`阅读 ${post.data.title}`}>

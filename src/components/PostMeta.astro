@@ -1,21 +1,22 @@
 ---
 import type { BlogPost } from '../lib/posts';
-import { categoryMap, formatDate, slugifyTag } from '../lib/posts';
+import { categoryMap, formatDate } from '../lib/posts';
 
 interface Props {
 	post: BlogPost;
 	readingTime?: string;
 	variant?: 'list' | 'article';
+	/** 栏目页里再标一次栏目是多余的。 */
+	hideCategory?: boolean;
 }
 
-const { post, readingTime, variant = 'list' } = Astro.props;
+const { post, readingTime, variant = 'list', hideCategory = false } = Astro.props;
 const category = categoryMap[post.data.category];
 ---
 
 <div class:list={['post-meta', variant === 'article' && 'post-meta--article']}>
 	<time datetime={post.data.publishDate.toISOString()}>{formatDate(post.data.publishDate)}</time>
-	<a class="post-meta__category" href={category.href}>{category.label}</a>
-	{variant === 'list' && post.data.location && <span>{post.data.location}</span>}
-	{variant === 'list' && post.data.tags.map((tag) => <a href={`/tags/${slugifyTag(tag)}/`}>#{tag}</a>)}
+	{variant === 'list' && !hideCategory && <a class="post-meta__category" href={category.href}>{category.label}</a>}
+	{post.data.location && <span>{post.data.location}</span>}
 	{readingTime && <span>{readingTime}</span>}
 </div>

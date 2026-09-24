@@ -1,6 +1,8 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro';
-import { formatDate, getPostUrl, getPublicPosts } from '../../lib/posts';
+import { categoryMap, getPostUrl, getPublicPosts } from '../../lib/posts';
+
+const shortDate = (date: Date) => `${String(date.getMonth() + 1).padStart(2, '0')} / ${String(date.getDate()).padStart(2, '0')}`;
 
 const posts = await getPublicPosts();
 const groups = posts.reduce<Record<string, typeof posts>>((acc, post) => {
@@ -15,15 +17,17 @@ const groups = posts.reduce<Record<string, typeof posts>>((acc, post) => {
 	<section class="page-shell" aria-labelledby="archive-title">
 		<p class="page-kicker">Archive</p>
 		<h1 id="archive-title" class="page-title">归档</h1>
+		<p class="page-description">共 {posts.length} 篇，按年份倒序。</p>
 		<div class="archive-list">
-			{Object.entries(groups).map(([year, yearPosts]) => (
+			{Object.entries(groups).sort(([a], [b]) => Number(b) - Number(a)).map(([year, yearPosts]) => (
 				<section aria-labelledby={`year-${year}`}>
-					<h2 id={`year-${year}`} class="archive-year">{year}</h2>
+					<h2 id={`year-${year}`} class="archive-year">{year}<small>{yearPosts.length} 篇</small></h2>
 					<ul>
 						{yearPosts.map((post) => (
-							<li>
+							<li data-category={post.data.category}>
 								<a href={getPostUrl(post)}>
-									<time datetime={post.data.publishDate.toISOString()}>{formatDate(post.data.publishDate)}</time>
+									<time datetime={post.data.publishDate.toISOString()}>{shortDate(post.data.publishDate)}</time>
+									<span>{categoryMap[post.data.category].label}</span>
 									<span>{post.data.title}</span>
 								</a>
 							</li>

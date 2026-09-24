@@ -5,7 +5,7 @@ import BaseLayout from './BaseLayout.astro';
 import PostMeta from '../components/PostMeta.astro';
 import ReadingProgress from '../components/ReadingProgress.astro';
 import ImageLightbox from '../components/ImageLightbox.astro';
-import { getCoverLayout, getPostUrl, getWritingSeason } from '../lib/posts';
+import { categoryMap, getCoverLayout, getPostUrl, getWritingSeason, slugifyTag } from '../lib/posts';
 
 interface Props {
 	post: BlogPost;
@@ -20,6 +20,8 @@ const { post, headings, readingTime, prev, next, related } = Astro.props;
 const toc = headings.filter((heading) => heading.depth > 1 && heading.depth < 4);
 const writtenAt = `写于 ${getWritingSeason(post.data.publishDate)}${post.data.location ? ` · ${post.data.location}` : ''}`;
 const cleanHeadingText = (text: string) => text.replace(/#$/, '').trim();
+const category = categoryMap[post.data.category];
+const showToc = toc.length >= 2;
 ---
 
 <BaseLayout
@@ -34,9 +36,10 @@ const cleanHeadingText = (text: string) => text.replace(/#$/, '').trim();
 	<ReadingProgress />
 	<article class="article-shell" data-category={post.data.category} data-cover-layout={getCoverLayout(post)}>
 		<header class="article-header">
+			<a class="article-category-link" href={category.href}>{category.label}</a>
 			<h1>{post.data.title}</h1>
-			<PostMeta post={post} readingTime={readingTime} variant="article" />
-			<p class="article-description">{post.data.description}</p>
+			<PostMeta post={post} readingTime={readingTime} variant="article" hideCategory />
+			{post.data.description && <p class="article-description">{post.data.description}</p>}
 			{post.data.cover && (
 				<figure class="article-cover-frame">
 					<img
@@ -53,9 +56,9 @@ const cleanHeadingText = (text: string) => text.replace(/#$/, '').trim();
 			)}
 		</header>
 
-		{toc.length > 0 && (
-			<nav class="toc" aria-label="文章目录">
-				<h2>目录</h2>
+		{showToc && (
+			<details class="toc" open>
+				<summary>目录</summary>
 				<ol>
 					{toc.map((heading) => (
 						<li class={`toc-depth-${heading.depth}`}>
@@ -63,7 +66,7 @@ const cleanHeadingText = (text: string) => text.replace(/#$/, '').trim();
 						</li>
 					))}
 				</ol>
-			</nav>
+			</details>
 		)}
 
 		<div class="prose">
@@ -72,11 +75,20 @@ const cleanHeadingText = (text: string) => text.replace(/#$/, '').trim();
 
 		<footer class="article-ending">
 			<p>{writtenAt}</p>
+			{post.data.tags.length > 0 && (
+				<div class="article-ending__tags" aria-label="文章标签">
+					{post.data.tags.map((tag) => <a href={`/tags/${slugifyTag(tag)}/`}>#{tag}</a>)}
+				</div>
+			)}
 		</footer>
 
 		<nav class="post-neighbors" aria-label="上一篇和下一篇">
-			{prev ? <a href={getPostUrl(prev)} rel="prev">上一篇：{prev.data.title}</a> : <span />}
-			{next ? <a href={getPostUrl(next)} rel="next">下一篇：{next.data.title}</a> : <span />}
+			{prev ? (
+				<a href={getPostUrl(prev)} rel="prev"><small>上一篇</small><span>{prev.data.title}</span></a>
+			) : <span />}
+			{next ? (
+				<a href={getPostUrl(next)} rel="next"><small>下一篇</small><span>{next.data.title}</span></a>
+			) : <span />}
 		</nav>
 
 		{related.length > 0 && (

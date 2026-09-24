@@ -10,6 +10,6 @@ const posts = await getPublicPosts();
 	<section class="page-shell" aria-labelledby="blog-title">
 		<p class="page-kicker">All Posts</p>
 		<h1 id="blog-title" class="page-title">所有文章</h1>
-		<PostList posts={posts} />
+		<PostList posts={posts} empty="还没有公开的文章。" />
 	</section>
 </BaseLayout>

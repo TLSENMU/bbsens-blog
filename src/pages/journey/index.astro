@@ -13,6 +13,6 @@ const categoryPosts = getPostsByCategory(posts, 'journey');
 		<p class="page-kicker">On the Road</p>
 		<h1 id="journey-title" class="page-title">{category.label}</h1>
 		<p class="page-description">{category.description}</p>
-		<PostList posts={categoryPosts} />
+		<PostList posts={categoryPosts} hideCategory empty="「在路上」还没有文章。" />
 	</section>
 </BaseLayout>

@@ -6,7 +6,8 @@ const blog = defineCollection({
 	loader: glob({ base: './src/content/blog', pattern: '**/*.{md,mdx}' }),
 	schema: z.object({
 		title: z.string(),
-		description: z.string(),
+		// 随笔一类的短文不强制写摘要；列表页、RSS、搜索都会优雅降级。
+		description: z.string().optional(),
 		publishDate: z.coerce.date(),
 		updatedDate: z.coerce.date().optional(),
 		tags: z.array(z.string()).default([]),

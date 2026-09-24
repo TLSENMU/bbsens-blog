@@ -19,6 +19,7 @@ const posts = sortPostsByDate((await getPublicPosts()).filter((post) => post.dat
 	<section class="page-shell" aria-labelledby="tag-title">
 		<p class="page-kicker">Tag</p>
 		<h1 id="tag-title" class="page-title">#{tag}</h1>
-		<PostList posts={posts} />
+		<p class="page-description">{posts.length} 篇 · <a href="/tags/">全部标签</a></p>
+		<div class="tag-page-list"><PostList posts={posts} empty="这个标签下还没有文章。" /></div>
 	</section>
 </BaseLayout>

@@ -6,7 +6,7 @@ export async function GET() {
 		JSON.stringify(
 			posts.map((post) => ({
 				title: post.data.title,
-				description: post.data.description,
+				description: post.data.description ?? '',
 				url: getPostUrl(post),
 				tags: post.data.tags,
 				category: post.data.category,

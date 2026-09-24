@@ -96,7 +96,7 @@ const quietImages = [
 					<article data-category={post.data.category}>
 						<PostMeta post={post} readingTime={estimateReadingTime(post.body)} />
 						<h3><a href={getPostUrl(post)}>{post.data.title}</a></h3>
-						<p>{post.data.description}</p>
+						{post.data.description && <p>{post.data.description}</p>}
 					</article>
 				))}
 			</div>
@@ -112,7 +112,7 @@ const quietImages = [
 					<article data-category={post.data.category}>
 						<PostMeta post={post} readingTime={estimateReadingTime(post.body)} />
 						<h3><a href={getPostUrl(post)}>{post.data.title}</a></h3>
-						<p>{post.data.description}</p>
+						{post.data.description && <p>{post.data.description}</p>}
 					</article>
 				))}
 			</div>

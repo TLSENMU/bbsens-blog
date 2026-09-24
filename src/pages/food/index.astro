@@ -13,6 +13,6 @@ const categoryPosts = getPostsByCategory(posts, 'food');
 		<p class="page-kicker">Food Notes</p>
 		<h1 id="food-title" class="page-title">{category.label}</h1>
 		<p class="page-description">{category.description}</p>
-		<PostList posts={categoryPosts} />
+		<PostList posts={categoryPosts} hideCategory empty="「食」还没有文章。" />
 	</section>
 </BaseLayout>

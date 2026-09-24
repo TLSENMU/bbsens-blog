@@ -1,10 +1,24 @@
 ---
 import { siteConfig } from '../lib/site';
+
+const year = new Date().getFullYear();
+const links = [
+	{ href: '/blog/', label: '所有文章' },
+	{ href: '/seasons/', label: '季笺' },
+	{ href: '/tags/', label: '标签' },
+	{ href: '/archive/', label: '归档' },
+	{ href: '/search/', label: '搜索' },
+	{ href: '/rss.xml', label: 'RSS' },
+];
 ---
 
 <footer class="site-footer">
 	<div>
-		<p>{siteConfig.siteTitle}</p>
+		<p class="site-footer__brand">{siteConfig.siteTitle}</p>
 		<p>{siteConfig.siteSubtitle}，缓慢记录。</p>
 	</div>
+	<nav class="site-footer__nav" aria-label="页脚导航">
+		{links.map((link) => <a href={link.href}>{link.label}</a>)}
+	</nav>
+	<p class="site-footer__note">© {year} {siteConfig.author} · 文字与照片如无说明均为自摄自写。</p>
 </footer>

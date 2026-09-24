@@ -13,6 +13,6 @@ const categoryPosts = getPostsByCategory(posts, 'people');
 		<p class="page-kicker">Things & People</p>
 		<h1 id="people-title" class="page-title">{category.label}</h1>
 		<p class="page-description">{category.description}</p>
-		<PostList posts={categoryPosts} />
+		<PostList posts={categoryPosts} hideCategory empty="「物与人」还没有文章。" />
 	</section>
 </BaseLayout>

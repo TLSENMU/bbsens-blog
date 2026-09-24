@@ -24,18 +24,42 @@ const recentPosts = posts
 	})
 	.slice(0, 5);
 
-const seasonNotes = [
-	{ label: '思考', text: '留下的不是全部，而是经过时间筛过以后仍然发亮的部分。' },
-	{ label: '生活', text: '几顿慢慢吃完的饭，一间有风的房间，和一次没有主题的见面。' },
-	{ label: '笺言', text: '愿许多小事，不必变得重大，也能被认真看见。' },
-];
+// 「这一季」的三段小注直接从季笺正文的 ## 小节里取，不再在首页里写死。
+function extractSeasonNotes(body = '') {
+	const notes: Array<{ label: string; text: string }> = [];
+	const sections = body.split(/^##\s+/m).slice(1);
+	for (const section of sections) {
+		const [heading, ...rest] = section.split('\n');
+		const text = rest
+			.map((line) => line.trim())
+			.filter((line) => line && !line.startsWith('>') && !line.startsWith('#'))
+			.join(' ')
+			.replace(/[*_`]/g, '');
+		if (heading?.trim() && text) notes.push({ label: heading.trim(), text: text.length > 72 ? `${text.slice(0, 72)}…` : text });
+	}
+	return notes.slice(0, 3);
+}
+const seasonNotes = latestSeason ? extractSeasonNotes(latestSeason.body) : [];
 
-const quietImages = [
-	{ src: '/assets/covers/travel.jpg', alt: '占位图：路途上的柔和色块', caption: '路上的光' },
-	{ src: '/assets/covers/daily.jpg', alt: '占位图：餐桌和房间气氛', caption: '一顿慢饭' },
-	{ src: '/assets/covers/essay.jpg', alt: '占位图：傍晚城市与笔记', caption: '见面以后' },
-	{ src: '/assets/covers/notes.jpg', alt: '占位图：房间与纸页气氛', caption: '房间一角' },
+const entranceCategories: Array<keyof typeof categoryMap> = ['journey', 'food', 'people'];
+const entrances = entranceCategories.map((key) => ({
+	key,
+	...categoryMap[key],
+	count: posts.filter((post) => post.data.category === key).length,
+}));
+
+// 「拾影」优先用真实文章封面；不够四张时用占位图补齐。
+const placeholderImages = [
+	{ src: '/assets/covers/travel.jpg', alt: '占位图：路途上的柔和色块', caption: '路上的光', href: '/journey/' },
+	{ src: '/assets/covers/daily.jpg', alt: '占位图：餐桌和房间气氛', caption: '一顿慢饭', href: '/food/' },
+	{ src: '/assets/covers/essay.jpg', alt: '占位图：傍晚城市与笔记', caption: '见面以后', href: '/people/' },
+	{ src: '/assets/covers/notes.jpg', alt: '占位图：房间与纸页气氛', caption: '房间一角', href: '/thoughts/' },
 ];
+const coverImages = posts
+	.filter((post) => post.data.cover && post.data.cover.startsWith('/assets/posts/'))
+	.slice(0, 4)
+	.map((post) => ({ src: post.data.cover!, alt: post.data.coverAlt ?? post.data.title, caption: post.data.title, href: getPostUrl(post), position: post.data.coverPosition }));
+const quietImages = [...coverImages, ...placeholderImages].slice(0, 4);
 ---
 
 <BaseLayout>
@@ -49,29 +73,44 @@ const quietImages = [
 			<h1 id="home-title">{siteConfig.siteDescription}</h1>
 		</header>
 
+		<nav class="home-entrances entrance-grid" aria-label="栏目入口">
+			{entrances.map((item) => (
+				<a href={item.href} data-category={item.key}>
+					<span>{item.label}</span>
+					<small>{item.description}</small>
+					<em>{item.count > 0 ? `${item.count} 篇` : item.note}</em>
+				</a>
+			))}
+		</nav>
+
 		{latestSeason && (
 			<section class="season-feature" aria-labelledby="season-feature-title">
 				<div class="season-feature__text">
 					<p class="page-kicker">这一季</p>
 					<h2 id="season-feature-title">{latestSeason.data.year} {latestSeason.data.season}</h2>
 					<p>{latestSeason.data.description}</p>
-					<dl>
-						{seasonNotes.map((item) => (
-							<div>
-								<dt>{item.label}</dt>
-								<dd>{item.text}</dd>
-							</div>
-						))}
-					</dl>
-					<a class="season-link" href={getSeasonUrl(latestSeason)}>读完整季笺</a>
+					{seasonNotes.length > 0 && (
+						<dl>
+							{seasonNotes.map((item) => (
+								<div>
+									<dt>{item.label}</dt>
+									<dd>{item.text}</dd>
+								</div>
+							))}
+						</dl>
+					)}
+					<a class="season-link" href={getSeasonUrl(latestSeason)}>读完整季笺 →</a>
 				</div>
 				{latestSeason.data.cover && (
-					<img src={latestSeason.data.cover} alt={latestSeason.data.coverAlt ?? ''} loading="lazy" width="1600" height="1000" />
+					<a class="season-feature__cover" href={getSeasonUrl(latestSeason)} aria-label="读完整季笺">
+						<img src={latestSeason.data.cover} alt={latestSeason.data.coverAlt ?? ''} loading="lazy" width="1600" height="1000" />
+					</a>
 				)}
 			</section>
 		)}
 
-		<details class="curated-section curated-section--folded">
+		{seasonalPicks.length > 0 && (
+		<details class="curated-section curated-section--folded" open>
 			<summary aria-controls="curated-list">
 				<div class="section-heading">
 					<p class="page-kicker">Selected This Season</p>
@@ -84,11 +123,12 @@ const quietImages = [
 					<article data-category={post.data.category}>
 						<PostMeta post={post} readingTime={estimateReadingTime(post.body)} />
 						<h3><a href={getPostUrl(post)}>{post.data.title}</a></h3>
-						<p>{post.data.description}</p>
+						{post.data.description && <p>{post.data.description}</p>}
 					</article>
 				))}
 			</div>
 		</details>
+		)}
 
 		<section class="recent-section" aria-labelledby="recent-title">
 			<div class="section-heading">
@@ -100,7 +140,12 @@ const quietImages = [
 					<article data-category={post.data.category}>
 						<PostMeta post={post} readingTime={estimateReadingTime(post.body)} />
 						<h3><a href={getPostUrl(post)}>{post.data.title}</a></h3>
-						<p>{post.data.description}</p>
+						{post.data.description && <p>{post.data.description}</p>}
+						{post.data.cover && (
+							<a class="recent-list__thumb" href={getPostUrl(post)} aria-hidden="true" tabindex="-1">
+								<img src={post.data.cover} alt="" loading="lazy" width="400" height="400" style={`object-position: ${post.data.coverPosition ?? '50% 50%'}`} />
+							</a>
+						)}
 					</article>
 				))}
 			</div>
@@ -114,7 +159,9 @@ const quietImages = [
 			<div class="quiet-image-strip">
 				{quietImages.map((image) => (
 					<figure>
-						<img src={image.src} alt={image.alt} loading="lazy" width="1600" height="1000" />
+						<a href={image.href}>
+							<img src={image.src} alt={image.alt} loading="lazy" width="1600" height="1000" style={image.position ? `object-position: ${image.position}` : undefined} />
+						</a>
 						<figcaption>{image.caption}</figcaption>
 					</figure>
 				))}
