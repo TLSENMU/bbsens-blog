@@ -13,14 +13,13 @@ coverPosition: 50% 52%
 category: journey
 draft: false
 unlisted: false
-featured: false
 location: 德阳
 language: zh
 ---
 
 >Cooking
 
-## 想写的方向
+## 想写的东西
 
 - 回到德阳时，最先注意到的东西
 - 哪些地方熟悉，哪些地方陌生
@@ -29,4 +28,4 @@ language: zh
 
 ## 正文
 
-从这里开始写。
+我回去的只是家，不是德阳。我和这个城市有隔阂，在街道上总是不安，总是想起十几岁的迷茫和无助。
