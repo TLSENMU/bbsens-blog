@@ -1,14 +1,23 @@
 ---
+import { getEntry, render } from 'astro:content';
 import BaseLayout from '../../layouts/BaseLayout.astro';
+import { formatDate } from '../../lib/posts';
+
+// 正文在 src/content/about/about.md，写作台左栏的「关于」就是改它。
+const entry = await getEntry('about', 'about');
+if (!entry) throw new Error('缺少 src/content/about/about.md');
+const { Content } = await render(entry);
 ---
 
-<BaseLayout title="关于我" description="关于这个博客和作者。">
+<BaseLayout title={entry.data.title} description={entry.data.description}>
 	<section class="article-shell" aria-labelledby="about-title">
-		<p class="page-kicker">About</p>
-		<h1 id="about-title" class="page-title">关于我</h1>
+		<p class="page-kicker">{entry.data.kicker}</p>
+		<h1 id="about-title" class="page-title">{entry.data.title}</h1>
 		<div class="prose">
-			<p>这里会写一些关于我自己的事：我怎么旅行，喜欢什么样的房间，常常被哪些食物安慰，又为什么想把朋友、作家、设计和日常生活放在同一个地方记录。</p>
-			<p>我希望这个博客像一本慢慢翻的私人杂志，不急着总结，也不急着证明什么。它只是把路上、餐桌边、房间里和人群中的片刻留下来。</p>
+			<Content />
 		</div>
+		{entry.data.updatedDate && (
+			<p class="about-updated">最后更新于 {formatDate(entry.data.updatedDate)}</p>
+		)}
 	</section>
 </BaseLayout>

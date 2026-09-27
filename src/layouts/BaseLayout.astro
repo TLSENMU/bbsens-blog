@@ -13,6 +13,10 @@ interface Props {
 	publishedTime?: Date;
 	updatedTime?: Date;
 	tags?: string[];
+	/** 页面语言。只有英文文章页会传 'en'，站点其余部分仍是中文。 */
+	lang?: string;
+	/** hreflang 互指，让搜索引擎知道中英是同一篇的两个版本。 */
+	alternates?: { hreflang: string; href: string }[];
 }
 
 const {
@@ -23,6 +27,8 @@ const {
 	publishedTime,
 	updatedTime,
 	tags = [],
+	lang = siteConfig.language,
+	alternates = [],
 } = Astro.props;
 
 const pageTitle = Astro.props.title ? `${title}｜${siteConfig.siteTitle}` : `${siteConfig.siteTitle}｜${siteConfig.siteSubtitle}`;
@@ -66,7 +72,7 @@ const structuredData =
 ---
 
 <!doctype html>
-<html lang={siteConfig.language}>
+<html lang={lang}>
 	<head>
 		<meta charset="utf-8" />
 		<meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -85,10 +91,14 @@ const structuredData =
 		<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png?v=from-bbs-2" />
 		<link rel="shortcut icon" href="/favicon.ico?v=from-bbs-2" />
 		<link rel="alternate" type="application/rss+xml" title={`${siteConfig.siteTitle} RSS`} href={rssUrl} />
+		{alternates.map((item) => (
+			<link rel="alternate" hreflang={item.hreflang} href={new URL(item.href, siteConfig.siteUrl).toString()} />
+		))}
 		<meta property="og:type" content={type} />
 		<meta property="og:title" content={pageTitle} />
 		<meta property="og:description" content={description} />
 		<meta property="og:url" content={canonical} />
+		<meta property="og:locale" content={lang.toLowerCase().startsWith('en') ? 'en_US' : 'zh_CN'} />
 		<meta property="og:image" content={ogImage} />
 		{type === 'article' && publishedTime && <meta property="article:published_time" content={publishedTime.toISOString()} />}
 		{type === 'article' && updatedTime && <meta property="article:modified_time" content={updatedTime.toISOString()} />}

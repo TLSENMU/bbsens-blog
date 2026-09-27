@@ -33,13 +33,19 @@ function frontmatterHasBoolean(source: string, key: string) {
 	return new RegExp(`^${key}:\\s*true\\s*$`, 'm').test(match[1]);
 }
 
+const unlistedSlugs = walkMarkdownFiles(blogContentDir)
+	.filter((path) => {
+		const source = readFileSync(path, 'utf8');
+		return frontmatterHasBoolean(source, 'unlisted') && !frontmatterHasBoolean(source, 'draft');
+	})
+	.map((path) => slugFromContentPath(path));
+
+// 未列出的文章不进 sitemap——它的英文版同样不进，否则从后门漏出去。
 const unlistedBlogUrls = new Set(
-	walkMarkdownFiles(blogContentDir)
-		.filter((path) => {
-			const source = readFileSync(path, 'utf8');
-			return frontmatterHasBoolean(source, 'unlisted') && !frontmatterHasBoolean(source, 'draft');
-		})
-		.map((path) => new URL(`/blog/${slugFromContentPath(path)}/`, siteConfig.siteUrl).toString()),
+	unlistedSlugs.flatMap((slug) => [
+		new URL(`/blog/${slug}/`, siteConfig.siteUrl).toString(),
+		new URL(`/en/blog/${slug}/`, siteConfig.siteUrl).toString(),
+	]),
 );
 
 function rehypeFigureCaptions() {

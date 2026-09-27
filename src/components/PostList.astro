@@ -1,7 +1,8 @@
 ---
 import type { BlogPost } from '../lib/posts';
 import PostMeta from './PostMeta.astro';
-import { estimateReadingTime, getCoverLayout, getPostUrl } from '../lib/posts';
+import { estimateReadingTime, getCoverLayout, getPostSlug, getPostUrl } from '../lib/posts';
+import { getEnTitleMap, getEnUrl } from '../lib/en';
 
 interface Props {
 	posts: BlogPost[];
@@ -11,6 +12,8 @@ interface Props {
 }
 
 const { posts, compact = false, hideCategory = false, empty = '这里还没有文章。' } = Astro.props;
+// 有英文版的文章，标题下面多一行英文标题，点进去就是英文页。
+const enTitles = await getEnTitleMap();
 ---
 
 <div class:list={['post-list', compact && 'post-list--compact']}>
@@ -20,6 +23,12 @@ const { posts, compact = false, hideCategory = false, empty = '这里还没有�
 			<div class="post-entry__content">
 				<PostMeta post={post} readingTime={estimateReadingTime(post.body)} hideCategory={hideCategory} />
 				<h2><a href={getPostUrl(post)}>{post.data.title}</a></h2>
+				{enTitles.has(getPostSlug(post)) && (
+					<a class="post-entry__en" href={getEnUrl(getPostSlug(post))} hreflang="en" lang="en">
+						<span class="post-entry__en-badge">EN</span>
+						{enTitles.get(getPostSlug(post))}
+					</a>
+				)}
 				{post.data.description && <p>{post.data.description}</p>}
 			</div>
 			{!compact && post.data.cover && (

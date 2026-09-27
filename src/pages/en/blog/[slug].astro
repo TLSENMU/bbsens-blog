@@ -1,0 +1,53 @@
+---
+import { render } from 'astro:content';
+import BlogPostLayout from '../../../layouts/BlogPostLayout.astro';
+import { estimateReadingTime, getPostUrl, sortPostsByDate, isPublicPost } from '../../../lib/posts';
+import { getEnSlug, getEnUrl, getPublishedEnEntries } from '../../../lib/en';
+
+export async function getStaticPaths() {
+	const pairs = await getPublishedEnEntries();
+	// 上一篇 / 下一篇只在「也有英文版」的文章之间走，免得把英文读者丢进中文页。
+	// unlisted 的中文文章对应的英文页照样生成（靠链接访问），但不进这条链。
+	const chain = sortPostsByDate(pairs.filter(({ post }) => isPublicPost(post)).map(({ post }) => post));
+	const titleBySlug = new Map(pairs.map(({ entry }) => [getEnSlug(entry), entry.data.title]));
+
+	return pairs.map(({ entry, post }) => {
+		const slug = getEnSlug(entry);
+		const index = chain.findIndex((item) => item.id === post.id);
+		const at = (i: number) => {
+			const item = i >= 0 && i < chain.length ? chain[i] : undefined;
+			if (!item) return undefined;
+			const itemSlug = item.id.replace(/\/index\.(md|mdx)$/i, '').replace(/\.(md|mdx)$/i, '');
+			return { url: getEnUrl(itemSlug), title: titleBySlug.get(itemSlug) ?? item.data.title };
+		};
+		return {
+			params: { slug },
+			props: {
+				entry,
+				post,
+				prev: index === -1 ? undefined : at(index + 1),
+				next: index === -1 ? undefined : at(index - 1),
+			},
+		};
+	});
+}
+
+const { entry, post, prev, next } = Astro.props;
+const { Content, headings } = await render(entry);
+const readingTime = estimateReadingTime(entry.body);
+---
+
+<BlogPostLayout
+	post={post}
+	headings={headings}
+	readingTime={readingTime}
+	lang="en"
+	title={entry.data.title}
+	description={entry.data.description}
+	location={entry.data.location ?? post.data.location}
+	prev={prev}
+	next={next}
+	altUrl={getPostUrl(post)}
+>
+	<Content />
+</BlogPostLayout>

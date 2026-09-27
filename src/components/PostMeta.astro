@@ -8,15 +8,21 @@ interface Props {
 	variant?: 'list' | 'article';
 	/** 栏目页里再标一次栏目是多余的。 */
 	hideCategory?: boolean;
+	/** 英文文章页要英文的日期和栏目名。 */
+	lang?: 'zh' | 'en';
+	/** 英文页用译好的地点，不传就是原文的。 */
+	location?: string;
 }
 
-const { post, readingTime, variant = 'list', hideCategory = false } = Astro.props;
+const { post, readingTime, variant = 'list', hideCategory = false, lang = 'zh' } = Astro.props;
+const location = Astro.props.location ?? post.data.location;
 const category = categoryMap[post.data.category];
+const isEn = lang === 'en';
 ---
 
 <div class:list={['post-meta', variant === 'article' && 'post-meta--article']}>
-	<time datetime={post.data.publishDate.toISOString()}>{formatDate(post.data.publishDate)}</time>
-	{variant === 'list' && !hideCategory && <a class="post-meta__category" href={category.href}>{category.label}</a>}
-	{post.data.location && <span>{post.data.location}</span>}
+	<time datetime={post.data.publishDate.toISOString()}>{formatDate(post.data.publishDate, isEn ? 'en-US' : 'zh-CN')}</time>
+	{variant === 'list' && !hideCategory && <a class="post-meta__category" href={category.href}>{isEn ? category.labelEn : category.label}</a>}
+	{location && <span>{location}</span>}
 	{readingTime && <span>{readingTime}</span>}
 </div>

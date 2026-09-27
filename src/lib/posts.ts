@@ -7,6 +7,7 @@ export type CoverLayout = NonNullable<BlogPost['data']['coverLayout']>;
 export const categoryMap = {
 	journey: {
 		label: '在路上',
+		labelEn: 'On the Road',
 		href: '/journey/',
 		description: '把路途、城市、车窗、旅馆和抵达之前的心情写下来。',
 		tone: '雾霭蓝',
@@ -14,6 +15,7 @@ export const categoryMap = {
 	},
 	food: {
 		label: '食',
+		labelEn: 'Table',
 		href: '/food/',
 		description: '记录餐桌、味道、小店、菜单，以及一次饭里藏着的生活。',
 		tone: '浅陶杏',
@@ -21,6 +23,7 @@ export const categoryMap = {
 	},
 	people: {
 		label: '物与人',
+		labelEn: 'Things & People',
 		href: '/people/',
 		description: '写喜欢的设计、装修、作家、物件，也写朋友和那些值得反复想起的人。',
 		tone: '灰橄榄',
@@ -28,6 +31,7 @@ export const categoryMap = {
 	},
 	thoughts: {
 		label: '思绪',
+		labelEn: 'Thoughts',
 		href: '/thoughts/',
 		description: '放一些不急着归类的念头、感受、疑问和慢慢想明白的事。',
 		tone: '鸢尾灰',

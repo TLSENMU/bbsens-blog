@@ -6,40 +6,96 @@ import PostMeta from '../components/PostMeta.astro';
 import ReadingProgress from '../components/ReadingProgress.astro';
 import ImageLightbox from '../components/ImageLightbox.astro';
 import { categoryMap, getCoverLayout, getPostUrl, getWritingSeason, slugifyTag } from '../lib/posts';
+import { ARTICLE_STRINGS, getWritingSeasonEn, type ArticleLang } from '../lib/en';
+
+export interface NeighborLink {
+	url: string;
+	title: string;
+}
 
 interface Props {
+	/** 永远是中文原文那条：日期、栏目、封面、地点都从它来。 */
 	post: BlogPost;
 	headings: MarkdownHeading[];
 	readingTime: string;
-	prev?: BlogPost;
-	next?: BlogPost;
-	related: BlogPost[];
+	prev?: NeighborLink;
+	next?: NeighborLink;
+	related?: NeighborLink[];
+	/** 这一页用哪种语言的字词。站点导航和页脚不受影响。 */
+	lang?: ArticleLang;
+	/** 英文页用译出来的标题和摘要，中文页不传就是原文的。 */
+	title?: string;
+	description?: string;
+	/** 另一个语言版本的地址；没有就不显示切换。 */
+	altUrl?: string;
+	/** 译好的地点。不传就用中文原文里的。 */
+	location?: string;
 }
 
-const { post, headings, readingTime, prev, next, related } = Astro.props;
+const {
+	post,
+	headings,
+	readingTime,
+	prev,
+	next,
+	related = [],
+	lang = 'zh',
+	title = post.data.title,
+	description = post.data.description,
+	altUrl,
+	location = post.data.location,
+} = Astro.props;
+
+const t = ARTICLE_STRINGS[lang];
+const isEn = lang === 'en';
 const toc = headings.filter((heading) => heading.depth > 1 && heading.depth < 4);
-const writtenAt = `写于 ${getWritingSeason(post.data.publishDate)}${post.data.location ? ` · ${post.data.location}` : ''}`;
+const season = isEn ? getWritingSeasonEn(post.data.publishDate) : getWritingSeason(post.data.publishDate);
+const writtenAt = t.writtenAt(season, location);
 const cleanHeadingText = (text: string) => text.replace(/#$/, '').trim();
 const category = categoryMap[post.data.category];
+const categoryLabel = isEn ? category.labelEn : category.label;
 const showToc = toc.length >= 2;
+const zhUrl = getPostUrl(post);
+const alternates = altUrl
+	? isEn
+		? [
+				{ hreflang: 'zh-Hans', href: altUrl },
+				{ hreflang: 'en', href: Astro.url.pathname },
+				{ hreflang: 'x-default', href: altUrl },
+			]
+		: [
+				{ hreflang: 'zh-Hans', href: zhUrl },
+				{ hreflang: 'en', href: altUrl },
+				{ hreflang: 'x-default', href: zhUrl },
+			]
+	: [];
 ---
 
 <BaseLayout
-	title={post.data.title}
-	description={post.data.description}
+	title={title}
+	description={description}
 	image={post.data.cover}
 	type="article"
 	publishedTime={post.data.publishDate}
 	updatedTime={post.data.updatedDate}
 	tags={post.data.tags}
+	lang={isEn ? 'en' : undefined}
+	alternates={alternates}
 >
 	<ReadingProgress />
-	<article class="article-shell" data-category={post.data.category} data-cover-layout={getCoverLayout(post)}>
+	<article class="article-shell" data-category={post.data.category} data-cover-layout={getCoverLayout(post)} data-lang={lang}>
 		<header class="article-header">
-			<a class="article-category-link" href={category.href}>{category.label}</a>
-			<h1>{post.data.title}</h1>
-			<PostMeta post={post} readingTime={readingTime} variant="article" hideCategory />
-			{post.data.description && <p class="article-description">{post.data.description}</p>}
+			<div class="article-kicker">
+				<a class="article-category-link" href={category.href}>{categoryLabel}</a>
+				{altUrl && (
+					<a class="article-lang-switch" href={altUrl} hreflang={isEn ? 'zh-Hans' : 'en'} title={t.altHint}>
+						{t.altLink}
+					</a>
+				)}
+			</div>
+			<h1 lang={isEn ? 'en' : undefined}>{title}</h1>
+			<PostMeta post={post} readingTime={readingTime} variant="article" hideCategory lang={lang} location={location} />
+			{description && <p class="article-description">{description}</p>}
 			{post.data.cover && (
 				<figure class="article-cover-frame">
 					<img
@@ -51,14 +107,14 @@ const showToc = toc.length >= 2;
 						height="1000"
 						style={`object-position: ${post.data.coverPosition ?? '50% 50%'}`}
 					/>
-					{post.data.coverAlt && <figcaption class="image-caption">{post.data.coverAlt}</figcaption>}
+					{!isEn && post.data.coverAlt && <figcaption class="image-caption">{post.data.coverAlt}</figcaption>}
 				</figure>
 			)}
 		</header>
 
 		{showToc && (
 			<details class="toc" open>
-				<summary>目录</summary>
+				<summary>{t.toc}</summary>
 				<ol>
 					{toc.map((heading) => (
 						<li class={`toc-depth-${heading.depth}`}>
@@ -75,27 +131,35 @@ const showToc = toc.length >= 2;
 
 		<footer class="article-ending">
 			<p>{writtenAt}</p>
-			{post.data.tags.length > 0 && (
-				<div class="article-ending__tags" aria-label="文章标签">
-					{post.data.tags.map((tag) => <a href={`/tags/${slugifyTag(tag)}/`}>#{tag}</a>)}
-				</div>
+			{isEn ? (
+				<p class="article-ending__note">
+					Translated from the Chinese original. <a href={zhUrl} hreflang="zh-Hans">Read it in Chinese</a>.
+				</p>
+			) : (
+				post.data.tags.length > 0 && (
+					<div class="article-ending__tags" aria-label={t.tagsLabel}>
+						{post.data.tags.map((tag) => <a href={`/tags/${slugifyTag(tag)}/`}>#{tag}</a>)}
+					</div>
+				)
 			)}
 		</footer>
 
-		<nav class="post-neighbors" aria-label="上一篇和下一篇">
-			{prev ? (
-				<a href={getPostUrl(prev)} rel="prev"><small>上一篇</small><span>{prev.data.title}</span></a>
-			) : <span />}
-			{next ? (
-				<a href={getPostUrl(next)} rel="next"><small>下一篇</small><span>{next.data.title}</span></a>
-			) : <span />}
-		</nav>
+		{(prev || next) && (
+			<nav class="post-neighbors" aria-label={t.neighborsLabel}>
+				{prev ? (
+					<a href={prev.url} rel="prev"><small>{t.prev}</small><span>{prev.title}</span></a>
+				) : <span />}
+				{next ? (
+					<a href={next.url} rel="next"><small>{t.next}</small><span>{next.title}</span></a>
+				) : <span />}
+			</nav>
+		)}
 
 		{related.length > 0 && (
 			<section class="related-section" aria-labelledby="related-title">
-				<h2 id="related-title">相关文章</h2>
+				<h2 id="related-title">{t.related}</h2>
 				<ul>
-					{related.map((item) => <li><a href={getPostUrl(item)}>{item.data.title}</a></li>)}
+					{related.map((item) => <li><a href={item.url}>{item.title}</a></li>)}
 				</ul>
 			</section>
 		)}

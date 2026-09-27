@@ -2813,3 +2813,110 @@ body:has(.home-hero-full) .mobile-menu[open] nav {
 		text-align: left;
 	}
 }
+
+/* ---------------------------------------------------------------- 英文版 */
+/* 站点本身还是中文的，这里只管「这一篇有另一个语言版本」这件事。 */
+
+.article-kicker {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 1rem;
+	margin-bottom: 1rem;
+}
+
+.article-kicker .article-category-link {
+	margin-bottom: 0;
+}
+
+.article-lang-switch {
+	flex: none;
+	padding: 0.24rem 0.7rem;
+	border: 1px solid var(--color-border);
+	border-radius: 999px;
+	color: var(--color-muted);
+	font-family: var(--font-sans);
+	font-size: 0.74rem;
+	letter-spacing: 0.08em;
+	text-decoration: none;
+	transition: color 0.18s ease, border-color 0.18s ease;
+}
+
+.article-lang-switch:hover {
+	border-color: color-mix(in srgb, var(--category-color, var(--color-accent)) 60%, var(--color-border));
+	color: var(--color-text);
+}
+
+.article-ending__note {
+	margin: 0.4rem 0 0;
+	color: var(--color-muted);
+	font-family: var(--font-sans);
+	font-size: 0.82rem;
+}
+
+/* 列表里那一行英文标题。比中文标题低一档，不跟它抢。 */
+.post-entry__en {
+	display: inline-flex;
+	align-items: baseline;
+	gap: 0.5rem;
+	margin: -0.25rem 0 0.55rem;
+	max-width: 720px;
+	color: var(--color-muted);
+	font-family: var(--font-serif-en);
+	font-size: 0.98rem;
+	line-height: 1.35;
+	text-decoration: none;
+}
+
+.post-entry__en:hover {
+	color: color-mix(in srgb, var(--category-color, var(--color-link)) 54%, var(--color-link));
+}
+
+.post-entry__en-badge {
+	flex: none;
+	padding: 0.06rem 0.34rem;
+	border: 1px solid var(--color-border);
+	border-radius: 0.3rem;
+	color: var(--color-muted);
+	font-family: var(--font-sans);
+	font-size: 0.62rem;
+	letter-spacing: 0.1em;
+	transform: translateY(-0.1em);
+}
+
+.post-entry__en:hover .post-entry__en-badge {
+	border-color: color-mix(in srgb, var(--category-color, var(--color-accent)) 60%, var(--color-border));
+}
+
+/* 菜谱小卡那几列是按两个汉字的标签排的（菜名 / 要点 / 原料），
+   换成 Key point、Tomato sauce 这种就会折行。英文页让标签列按内容伸，封顶 7rem。 */
+/* :not(:first-child)——第一行是菜名，它本来就是通栏的一列，
+   套上标签列会把标题挤进 4.7rem 里断成三行。 */
+.article-shell[data-lang="en"] .recipe-card__meta div:not(:first-child) {
+	grid-template-columns: 4.7rem minmax(0, 1fr);
+}
+
+/* 仍然是固定比例的两列——每个 li 是独立的 grid，用 fit-content 会让每行
+   各缩各的，整张卡就参差不齐了。只是把最小宽度放宽到能装下英文标签。 */
+.article-shell[data-lang="en"] .recipe-ingredients li,
+.article-shell[data-lang="en"] .recipe-card--brief .recipe-ingredients li {
+	grid-template-columns: minmax(6.6rem, 0.46fr) minmax(0, 1fr);
+}
+
+
+/* 英文正文用西文衬线，中文排版的那套字距在这里反而碍事。 */
+.article-shell[data-lang="en"] .article-header h1,
+.article-shell[data-lang="en"] .prose {
+	font-family: var(--font-serif-en);
+}
+
+.article-shell[data-lang="en"] .prose p {
+	text-align: left;
+}
+
+.about-updated {
+	margin: 2.4rem 0 0;
+	color: var(--color-faint);
+	font-family: var(--font-sans);
+	font-size: 0.8rem;
+}

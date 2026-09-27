@@ -185,6 +185,25 @@
 	.post-item[aria-current="true"] { background: var(--bg-soft); box-shadow: inset 0 0 0 1px var(--line); }
 	.post-item__title { font-family: var(--serif); font-size: 0.92rem; line-height: 1.35; }
 	.post-item__meta { display: flex; gap: 0.4rem; flex-wrap: wrap; color: var(--faint); font-size: 0.69rem; }
+	/* ---------------------------------------------------------- 英文版面板 */
+	.en-state {
+		display: flex; align-items: center; gap: .45rem; flex-wrap: wrap;
+		margin-bottom: .6rem; padding: .5rem .6rem;
+		border: 1px solid var(--line); border-radius: 6px;
+		font-size: .74rem; color: var(--muted);
+	}
+	.en-state b { color: var(--ink); font-weight: 600; }
+	.en-state.is-warn { border-color: color-mix(in srgb, var(--warn) 45%, var(--line)); color: var(--warn); }
+	.en-state.is-warn b { color: var(--warn); }
+	.en-state.is-ok { border-color: color-mix(in srgb, var(--accent) 40%, var(--line)); }
+	.en-actions { display: flex; gap: .4rem; flex-wrap: wrap; margin-bottom: .7rem; }
+	.en-actions .btn { flex: none; }
+	#panel-en .toggle { margin-bottom: .7rem; }
+	#en-body { font-family: var(--mono); font-size: .78rem; line-height: 1.65; resize: vertical; }
+	.en-count-words { color: var(--faint); font-weight: 400; }
+	.badge--en { background: color-mix(in srgb, var(--accent) 16%, transparent); color: var(--accent-ink); }
+	.badge--en-draft { background: color-mix(in srgb, var(--faint) 20%, transparent); color: var(--muted); }
+	.badge--en-stale { background: color-mix(in srgb, var(--warn) 18%, transparent); color: var(--warn); }
 	.badge { display: inline-block; border-radius: 3px; padding: 0 0.28rem; font-size: 0.65rem; line-height: 1.5; }
 	.badge--draft { background: color-mix(in srgb, var(--warn) 18%, transparent); color: var(--warn); }
 	.badge--unlisted { background: color-mix(in srgb, var(--faint) 22%, transparent); color: var(--muted); }
@@ -337,6 +356,50 @@
 	.rows__item .del:hover { color: var(--danger); }
 	.rows__add { justify-self: start; }
 	dialog.wide { width: min(94vw, 680px); }
+	dialog.export { width: min(96vw, 900px); }
+	.export-grid { display: grid; grid-template-columns: 300px minmax(0, 1fr); gap: 1.1rem; align-items: start; }
+	.export-preview {
+		position: relative;
+		height: 62vh;
+		border: 1px solid var(--line);
+		border-radius: 8px;
+		overflow: hidden;
+		background: var(--bg);
+	}
+	.export-preview iframe {
+		position: absolute;
+		top: 0;
+		left: 0;
+		border: 0;
+		transform-origin: top left;
+		pointer-events: none;
+	}
+	.export-preview__scroll { position: absolute; inset: 0; overflow-y: auto; }
+	.export-preview__badge {
+		position: absolute;
+		right: 0.5rem;
+		bottom: 0.5rem;
+		padding: 0.1rem 0.5rem;
+		border-radius: 999px;
+		background: color-mix(in srgb, var(--bg-panel) 90%, transparent);
+		color: var(--faint);
+		font-size: 0.68rem;
+		font-family: var(--mono);
+	}
+	.export-opts { display: grid; gap: 0.75rem; }
+	.seg { display: flex; gap: 0.25rem; }
+	.seg button {
+		flex: 1;
+		border: 1px solid var(--line);
+		border-radius: 6px;
+		padding: 0.3rem 0.2rem;
+		background: var(--bg-soft);
+		color: var(--muted);
+		font-size: 0.78rem;
+	}
+	.seg button[aria-pressed="true"] { border-color: var(--text); background: var(--bg); color: var(--text); }
+	.export-note { color: var(--faint); font-size: 0.72rem; line-height: 1.6; }
+	.export-note.is-warn { color: var(--warn); }
 
 	/* 图片设置 */
 	.img-settings { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 0.6rem; color: var(--muted); font-size: 0.74rem; }
@@ -667,6 +730,7 @@
 			<button class="chip" data-filter="published">已发布</button>
 			<button class="chip" data-filter="unlisted">未列出</button>
 			<button class="chip" data-filter="seasons">季笺</button>
+			<button class="chip" data-filter="about">关于</button>
 		</div>
 		<ul class="post-list" id="post-list"></ul>
 		<div class="git-bar" id="git-bar" hidden>
@@ -704,6 +768,7 @@
 				</div>
 			</details>
 			<span class="spacer"></span>
+			<button class="tool" id="export-btn" title="导出成一张长图，发朋友圈用">长图</button>
 			<button class="tool" id="append-btn" title="在这篇文章末尾追加一条">追加一条</button>
 			<button class="tool" id="panel-toggle" title="收起 / 展开右栏（⌘\)">右栏</button>
 			<button class="tool" id="delete-post-btn">删除…</button>
@@ -736,9 +801,20 @@
 		<div class="panel__tabs" role="tablist">
 			<button role="tab" aria-selected="true" data-panel="meta">信息</button>
 			<button role="tab" aria-selected="false" data-panel="images">图片 <span class="count" id="image-count"></span></button>
+			<button role="tab" aria-selected="false" data-panel="en">英文 <span class="count" id="en-count"></span></button>
 			<button role="tab" aria-selected="false" data-panel="check">检查 <span class="count" id="check-count"></span></button>
 		</div>
 		<div class="panel__body" id="panel-meta">
+			<form id="about-form" autocomplete="off" onsubmit="return false" hidden>
+				<p class="section-title" style="margin-top:0">关于页 · src/content/about/about.md</p>
+				<div class="field" data-field="title"><label>标题 <code>title</code></label><input type="text" name="title" /><div class="hint"></div></div>
+				<div class="field" data-field="kicker"><label>小标题 <code>kicker</code></label><input type="text" name="kicker" placeholder="About" /><div class="hint" data-keep="1">标题上面那行小字。</div></div>
+				<div class="field" data-field="description"><label>摘要 <code>description</code></label><textarea name="description" rows="3"></textarea><div class="hint" data-keep="1">必填。不上页面，进 &lt;meta description&gt; 和分享卡片。</div></div>
+				<div class="field" data-field="updatedDate"><label>更新日期 <code>updatedDate</code></label><input type="date" name="updatedDate" /><div class="hint" data-keep="1">留空就不显示。填了会在正文末尾出现「最后更新于…」。<button type="button" class="btn btn--sm btn--ghost" id="about-today" style="min-height:20px;padding:0 .35rem">填今天</button></div></div>
+				<p class="hint" style="color:var(--faint);font-size:.69rem;margin-top:.8rem">
+					关于页没有草稿开关，存了就是线上那版。它不进列表、不进 RSS、不进搜索，也没有英文版。
+				</p>
+			</form>
 			<form id="season-form" autocomplete="off" onsubmit="return false" hidden>
 				<p class="section-title" style="margin-top:0">季笺 · src/content/seasons</p>
 				<div class="field" data-field="title"><label>标题 <code>title</code></label><input type="text" name="title" /><div class="hint"></div></div>
@@ -842,6 +918,29 @@
 			<p class="section-title">通用封面（public/assets/covers）</p>
 			<div class="asset-grid" id="covers-grid"></div>
 		</div>
+		<div class="panel__body" id="panel-en" hidden>
+			<div class="en-state" id="en-state"></div>
+			<div class="en-actions">
+				<button type="button" class="btn btn--primary btn--sm" id="en-translate">用 claude 翻译</button>
+				<button type="button" class="btn btn--ghost btn--sm" id="en-open-dev" title="在 astro dev 里看英文页">在站点里看</button>
+				<button type="button" class="btn btn--ghost btn--sm" id="en-delete" title="移到 .trash">丢掉</button>
+			</div>
+			<label class="toggle" id="en-publish-row">
+				<span>发布英文版 <small id="en-publish-note">勾上才生成 /en/blog/…；中文那篇是草稿时依然不上线</small></span>
+				<input type="checkbox" id="en-publish" />
+			</label>
+			<div class="field"><label>英文标题 <code>title</code></label><input type="text" id="en-title" placeholder="English title" /></div>
+			<div class="field"><label>英文摘要 <code>description</code></label><textarea id="en-description" rows="2" placeholder="选填"></textarea></div>
+			<div class="field"><label>英文地点 <code>location</code></label><input type="text" id="en-location" placeholder="留空就用中文原文里的" /></div>
+			<div class="field">
+				<label>英文正文 <span class="en-count-words" id="en-words"></span></label>
+				<textarea id="en-body" rows="18" spellcheck="true" placeholder="还没有译文。上面点「用 claude 翻译」，或者自己写。"></textarea>
+			</div>
+			<p class="hint" style="color:var(--faint);font-size:.69rem;margin-top:.5rem">
+				日期、栏目、标签、封面都跟着中文原文走，这里只存译出来的标题、摘要和正文。
+				站点导航和页脚仍然是中文——翻的是这一篇，不是整个站。
+			</p>
+		</div>
 		<div class="panel__body" id="panel-check" hidden>
 			<ul class="check-list" id="check-list"></ul>
 			<p class="section-title">将写入的 frontmatter</p>
@@ -926,6 +1025,49 @@
 			<button type="submit" class="btn btn--primary">创建草稿</button>
 		</div>
 	</form>
+</dialog>
+
+<dialog id="export-dialog" class="export">
+	<h2>导出长图</h2>
+	<div class="export-grid">
+		<div class="export-opts">
+			<div class="field" style="margin:0">
+				<label>宽度</label>
+				<div class="seg" id="export-width">
+					<button type="button" data-w="750" aria-pressed="false">750</button>
+					<button type="button" data-w="1080" aria-pressed="true">1080</button>
+					<button type="button" data-w="1242" aria-pressed="false">1242</button>
+				</div>
+				<div class="hint" data-keep="1">朋友圈用 1080 就够。</div>
+			</div>
+			<div class="field" style="margin:0">
+				<label>底色</label>
+				<div class="seg" id="export-theme">
+					<button type="button" data-theme="light" aria-pressed="true">纸张</button>
+					<button type="button" data-theme="dark" aria-pressed="false">夜色</button>
+				</div>
+			</div>
+			<div class="field" style="margin:0">
+				<label>内容</label>
+				<div class="seg" id="export-limit">
+					<button type="button" data-limit="0" aria-pressed="true">全文</button>
+					<button type="button" data-limit="4" aria-pressed="false">开头四段</button>
+				</div>
+			</div>
+			<label class="toggle"><span>带页脚 <small>From BBS · 站点地址</small></span><input type="checkbox" id="export-footer" checked /></label>
+			<label class="toggle"><span>二倍图 <small>更清楚，文件也更大</small></span><input type="checkbox" id="export-2x" /></label>
+			<p class="export-note" id="export-note"></p>
+		</div>
+		<div class="export-preview">
+			<div class="export-preview__scroll" id="export-scroll"><iframe id="export-frame" title="长图预览"></iframe></div>
+			<span class="export-preview__badge" id="export-size"></span>
+		</div>
+	</div>
+	<div class="actions">
+		<button type="button" class="btn btn--ghost" id="export-open">在新标签里打开</button>
+		<button type="button" class="btn btn--ghost" id="export-cancel">关闭</button>
+		<button type="button" class="btn btn--primary" id="export-save">下载 PNG</button>
+	</div>
 </dialog>
 
 <dialog id="git-dialog" class="wide">
@@ -1051,7 +1193,7 @@
 		title: $('#topbar-title'), status: $('#save-status'), openDev: $('#open-in-dev'),
 		editor: $('#editor'), preview: $('#preview'), empty: $('#empty-state'), editorPane: $('#editor-pane'),
 		editorFoot: $('#editor-foot'), wordCount: $('#word-count'), cursorPos: $('#cursor-pos'),
-		form: $('#meta-form'), seasonForm: $('#season-form'), catPicker: $('#cat-picker'),
+		form: $('#meta-form'), seasonForm: $('#season-form'), aboutForm: $('#about-form'), catPicker: $('#cat-picker'),
 		recipeDialog: $('#recipe-dialog'), recipeIng: $('#recipe-ing'), recipeSteps: $('#recipe-steps'),
 		imgCompress: $('#img-compress'), imgMaxEdge: $('#img-maxedge'), imgNote: $('#img-settings-note'),
 		tagsInput: $('#tags-input'), tagEntry: $('#tag-entry'), tagSuggest: $('#tag-suggest'),
@@ -1110,17 +1252,30 @@
 	const isTyping = () => ['INPUT', 'TEXTAREA', 'SELECT'].includes(document.activeElement?.tagName);
 
 	const isSeason = () => state.kind === 'season';
-	const activeForm = () => (isSeason() ? el.seasonForm : el.form);
+	const isAbout = () => state.kind === 'about';
+	/** 「文章」是唯一有图片目录、封面、标签、英文版、长图的那种。 */
+	const isPost = () => state.kind === 'post';
+	const activeForm = () => (isSeason() ? el.seasonForm : isAbout() ? el.aboutForm : el.form);
 
-	/** 季笺没有图片目录，也谈不上「追加一条」，相关入口直接关掉。 */
+	/** 季笺和关于页都没有图片目录，也谈不上「追加一条」，相关入口直接关掉。 */
 	function syncKindUI() {
-		const season = isSeason();
-		for (const sel of ['#append-btn', '#insert-image-btn']) $(sel).disabled = season;
-		$('[data-panel="images"]').disabled = season;
-		$('[data-panel="images"]').title = season ? '季笺没有自己的图片目录' : '';
-		if (season) {
+		const post = isPost();
+		const what = isAbout() ? '关于页' : '季笺';
+		for (const sel of ['#append-btn', '#insert-image-btn', '#export-btn', '#delete-post-btn']) {
+			const node = $(sel);
+			if (node) node.disabled = !post;
+		}
+		$('[data-panel="images"]').disabled = !post;
+		$('[data-panel="images"]').title = post ? '' : `${what}没有自己的图片目录`;
+		$('[data-panel="en"]').disabled = !post;
+		$('[data-panel="en"]').title = post ? '' : `${what}没有英文版`;
+		if (!post) {
+			$('#en-count').textContent = '';
+			if (state.panel === 'en') switchPanel('meta');
 			el.imageCount.textContent = '';
-			el.assetGrid.innerHTML = '<p style="grid-column:1/-1;color:var(--faint);font-size:.75rem;margin:0">季笺用通用封面，在「信息 → 可选：封面」里选。</p>';
+			el.assetGrid.innerHTML = `<p style="grid-column:1/-1;color:var(--faint);font-size:.75rem;margin:0">${
+				isAbout() ? '关于页不放自己的图片。正文里可以直接引用 /assets/ 下已有的图。' : '季笺用通用封面，在「信息 → 可选：封面」里选。'
+			}</p>`;
 			el.assetMenu.hidden = true;
 			if (state.panel === 'images') switchPanel('meta');
 		}
@@ -1199,8 +1354,27 @@
 		}
 	}
 
+	/** 「关于」筛选下只有这一条，点开就是 src/content/about/about.md。 */
+	function renderAboutList() {
+		el.list.innerHTML = '';
+		const li = document.createElement('li');
+		const btn = document.createElement('button');
+		btn.className = 'post-item';
+		btn.setAttribute('aria-current', isAbout() ? 'true' : 'false');
+		btn.innerHTML = `
+			<span class="post-item__title">关于我</span>
+			<span class="post-item__meta">
+				<span>/about/</span>
+				<span>站点自带的一页</span>
+			</span>`;
+		btn.addEventListener('click', () => openAbout());
+		li.append(btn);
+		el.list.append(li);
+	}
+
 	function renderList() {
 		if (state.filter === 'seasons') return renderSeasonList();
+		if (state.filter === 'about') return renderAboutList();
 		const items = visiblePosts();
 		el.list.innerHTML = '';
 		if (!items.length) {
@@ -1222,6 +1396,9 @@
 					${p.draft ? '<span class="badge badge--draft">草稿</span>' : ''}
 					${p.unlisted ? '<span class="badge badge--unlisted">未列出</span>' : ''}
 					${p.featured ? '<span class="badge badge--featured">精选</span>' : ''}
+					${p.en === 'published' ? '<span class="badge badge--en">EN</span>' : ''}
+					${p.en === 'draft' ? '<span class="badge badge--en-draft">EN 草稿</span>' : ''}
+					${p.en === 'stale' ? '<span class="badge badge--en-stale">EN 过期</span>' : ''}
 					${p.yamlError ? '<span class="badge badge--error">YAML 错误</span>' : ''}
 				</span>`;
 			btn.addEventListener('click', () => openPost(p.slug));
@@ -1242,6 +1419,7 @@
 
 	// ------------------------------------------------------------------ 打开 / 表单
 	async function openPost(slug, { silent = false } = {}) {
+		if (en.dirty) await saveEn({ quiet: true }).catch(() => {});
 		if (state.dirty && !silent) {
 			await saveNow({ quiet: true }).catch(() => {});
 			if (state.dirty && !confirm('当前文章还有没保存的修改，仍然切换？')) return;
@@ -1270,6 +1448,7 @@
 	function adoptPost(post, { keepCaret = false } = {}) {
 		state.kind = 'post';
 		el.seasonForm.hidden = true;
+		el.aboutForm.hidden = true;
 		el.form.hidden = false;
 		state.current = post;
 		state.slug = post.slug;
@@ -1293,9 +1472,14 @@
 		renderList();
 		updateTitle();
 		updateWordCount();
+		// 自动保存会重新 adoptPost 同一篇，这时候不能把英文面板清掉。
+		if (en.slug !== post.slug) resetEn();
+		else renderEn();
+		if (state.panel === 'en') loadEn();
 	}
 
 	async function openSeason(slug) {
+		if (en.dirty) await saveEn({ quiet: true }).catch(() => {});
 		if (state.dirty) {
 			await saveNow({ quiet: true }).catch(() => {});
 			if (state.dirty && !confirm('还有没保存的修改，仍然切换？')) return;
@@ -1316,6 +1500,7 @@
 			el.editor.scrollTop = 0;
 			fillSeasonForm();
 			el.form.hidden = true;
+			el.aboutForm.hidden = true;
 			el.seasonForm.hidden = false;
 			el.empty.hidden = true;
 			el.editorFoot.hidden = false;
@@ -1357,6 +1542,118 @@
 			coverAlt: f.coverAlt.value,
 		};
 	}
+	// ------------------------------------------------------------------ 关于页
+	// src/content/about/about.md。站点上只有这一篇，所以没有列表、不能新建、不能删。
+	function fillAboutForm() {
+		const f = el.aboutForm;
+		f.title.value = state.fm.title ?? '';
+		f.kicker.value = state.fm.kicker ?? '';
+		f.description.value = state.fm.description ?? '';
+		f.updatedDate.value = state.fm.updatedDate ?? '';
+	}
+	function readAboutForm() {
+		const f = el.aboutForm;
+		state.fm = {
+			title: f.title.value,
+			kicker: f.kicker.value,
+			description: f.description.value,
+			updatedDate: f.updatedDate.value,
+		};
+	}
+	el.aboutForm.addEventListener('input', () => {
+		if (!isAbout() || !state.current) return;
+		readAboutForm(); setDirty(true); scheduleValidation();
+	});
+	el.aboutForm.addEventListener('change', () => {
+		if (!isAbout() || !state.current) return;
+		readAboutForm(); setDirty(true); scheduleValidation();
+	});
+	$('#about-today').addEventListener('click', () => {
+		el.aboutForm.updatedDate.value = state.meta.today;
+		el.aboutForm.dispatchEvent(new Event('input', { bubbles: true }));
+	});
+
+	async function openAbout() {
+		if (en.dirty) await saveEn({ quiet: true }).catch(() => {});
+		if (state.dirty) {
+			await saveNow({ quiet: true }).catch(() => {});
+			if (state.dirty && !confirm('还有没保存的修改，仍然切换？')) return;
+		}
+		try {
+			const about = await api('/api/about');
+			state.kind = 'about';
+			state.current = about;
+			state.slug = 'about';
+			state.fm = { ...about.frontmatter };
+			state.extra = about.extra || {};
+			state.mtimeMs = about.mtimeMs;
+			state.dirty = false;
+			state.stale = false;
+			el.conflict.hidden = true;
+			el.editor.value = about.body;
+			el.editor.setSelectionRange(0, 0);
+			el.editor.scrollTop = 0;
+			state.blocks = null;
+			fillAboutForm();
+			el.form.hidden = true;
+			el.seasonForm.hidden = true;
+			el.aboutForm.hidden = false;
+			el.empty.hidden = true;
+			el.editorFoot.hidden = false;
+			el.openDev.hidden = false;
+			el.openDev.href = `${state.meta.astroDevUrl}/about/`;
+			syncKindUI();
+			switchView(state.view);
+			updateTitle();
+			updateWordCount();
+			renderList();
+			setStatus('已保存', 'is-saved');
+			LS.set('lastOpen', { kind: 'about', slug: 'about' });
+			location.hash = 'about';
+			if (about.yamlError) toast(`关于页的 frontmatter 解析失败：${about.yamlError}`, true);
+			await runValidation();
+		} catch (e) { toast(e.message, true); }
+	}
+
+	async function saveAboutNow({ quiet = false, overwrite = false, force = false } = {}) {
+		readAboutForm();
+		if (!quiet) setStatus('保存中…');
+		try {
+			const saved = await api('/api/about', {
+				method: 'PUT',
+				body: JSON.stringify({ frontmatter: state.fm, extra: state.extra, body: el.editor.value, mtimeMs: state.mtimeMs, overwrite, force }),
+			});
+			state.current = saved;
+			state.fm = { ...saved.frontmatter };
+			state.mtimeMs = saved.mtimeMs;
+			state.dirty = false;
+			state.stale = false;
+			el.conflict.hidden = true;
+			fillAboutForm();
+			renderValidation({ validation: saved.validation });
+			setStatus(`已保存 ${new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' })}`, 'is-saved');
+			scheduleGitRefresh();
+			updateTitle();
+			if (!quiet) toast(`已保存 ${saved.file}`);
+			return saved;
+		} catch (error) {
+			if (error.data?.code === 'stale') {
+				state.stale = true; el.conflict.hidden = false;
+				el.conflict.dataset.diskMtime = error.data.mtimeMs;
+				setStatus('未保存：磁盘冲突', 'is-error');
+				return;
+			}
+			if (error.data?.validation) {
+				renderValidation({ validation: error.data.validation });
+				setStatus('未保存：有错误', 'is-error');
+				if (!quiet) toast(error.message, true);
+				return;
+			}
+			setStatus('保存失败', 'is-error');
+			toast(error.message, true);
+		}
+	}
+
 	el.seasonForm.addEventListener('input', () => {
 		if (!isSeason() || !state.current) return;
 		readSeasonForm(); setDirty(true);
@@ -1644,7 +1941,7 @@
 
 	async function uploadFiles(files, intent = 'insert') {
 		if (!state.current) { toast('先打开一篇文章', true); return; }
-		if (isSeason()) { toast('季笺没有自己的图片目录，封面请从通用封面里选', true); return; }
+		if (!isPost()) { toast(isAbout() ? '关于页不放自己的图片，正文里直接写 /assets/ 下已有的图' : '季笺没有自己的图片目录，封面请从通用封面里选', true); return; }
 		const list = Array.from(files).filter((f) => f.type.startsWith('image/') || /\.(jpe?g|png|webp|gif|avif|svg)$/i.test(f.name));
 		if (!list.length) { toast('没有可上传的图片', true); return; }
 		const uploaded = [];
@@ -2060,7 +2357,7 @@
 		doc.documentElement.dataset.theme = document.documentElement.dataset.theme;
 		const shell = doc.getElementById('shell');
 		shell.dataset.category = state.fm.category || '';
-		doc.getElementById('p-cat').hidden = isSeason() || !state.fm.category;
+		doc.getElementById('p-cat').hidden = !isPost() || !state.fm.category;
 		shell.dataset.coverLayout = state.fm.coverLayout || 'standard';
 		doc.getElementById('p-cat').textContent = CATEGORY_LABEL[state.fm.category] || '';
 		doc.getElementById('p-title').textContent = state.fm.title || '(无标题)';
@@ -2093,7 +2390,7 @@
 	async function runValidation() {
 		if (!state.current) return;
 		try {
-			const endpoint = isSeason() ? '/api/validate-season' : '/api/validate';
+			const endpoint = isSeason() ? '/api/validate-season' : isAbout() ? '/api/validate-about' : '/api/validate';
 			const r = await api(endpoint, { method: 'POST', body: JSON.stringify({ frontmatter: state.fm, extra: state.extra, slug: state.slug }) });
 			state.validation = r.validation;
 			renderValidation(r);
@@ -2183,6 +2480,7 @@
 	async function saveNow({ quiet = false, newSlug, overwrite = false, force = false } = {}) {
 		if (!state.current) return;
 		if (isSeason()) return saveSeasonNow({ quiet, overwrite, force });
+		if (isAbout()) return saveAboutNow({ quiet, overwrite, force });
 		readForm();
 		if (!quiet) setStatus('保存中…');
 		try {
@@ -2202,6 +2500,8 @@
 			setStatus(`已保存 ${time}`, 'is-saved');
 			LS.set('lastSlug', saved.slug);
 			location.hash = saved.slug;
+			// 中文原文改了，译文可能就过期了。自己没在改英文时才悄悄对一次。
+			if (en.loaded && !en.dirty && !en.busy) scheduleEnRecheck();
 			if (renamed) { await loadPosts(); toast(`已改名为 ${saved.file}`); }
 			else if (!quiet) toast(`已保存 ${saved.file}`);
 			else updateListEntry(saved);
@@ -2252,6 +2552,8 @@
 
 	async function publishCurrent() {
 		if (!state.current) return;
+		// 关于页没有 draft，⌘↩ 就当成「存一下」。
+		if (isAbout()) { await saveNow(); return; }
 		const f = activeForm();
 		if (f.draft.checked) { f.draft.checked = false; isSeason() ? readSeasonForm() : readForm(); }
 		const saved = await saveNow();
@@ -2260,7 +2562,9 @@
 
 	$('#conflict-reload').addEventListener('click', async () => {
 		state.stale = false; state.dirty = false;
-		if (isSeason()) await openSeason(state.slug); else await openPost(state.slug, { silent: true });
+		if (isSeason()) await openSeason(state.slug);
+		else if (isAbout()) await openAbout();
+		else await openPost(state.slug, { silent: true });
 		toast('已载入磁盘上的版本');
 	});
 	$('#conflict-overwrite').addEventListener('click', async () => {
@@ -2430,11 +2734,13 @@
 		{ t: '追加到某篇文章', sub: '', run: () => openQuick('append') },
 		{ t: '新建完整文章', sub: '', run: () => openNewDialog() },
 		{ t: '新建季笺', sub: '', run: () => openSeasonDialog() },
+		{ t: '编辑关于我', sub: '/about/', run: () => openAbout() },
 		{ t: '菜谱小卡（表单）', sub: '', run: () => openRecipeDialog('brief') },
 		{ t: '分屏：左写右看', sub: '⌘E', run: () => switchView('split') },
 		{ t: '只看正文', sub: '⌘E', run: () => switchView('edit') },
 		{ t: '收起 / 展开右栏', sub: '⌘\\', run: () => togglePanel() },
 		{ t: '切换深浅色', sub: '', run: () => applyTheme(document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark') },
+		{ t: '导出长图（发朋友圈）', sub: '', run: () => openExport() },
 		{ t: '提交并推送到 GitHub', sub: '', run: () => $('#git-commit').click() },
 		{ t: '从 GitHub 拉取', sub: '', run: () => $('#git-pull').click() },
 	];
@@ -2499,6 +2805,320 @@
 	el.paletteScrim.addEventListener('mousedown', (e) => { if (e.target === el.paletteScrim) closePalette(); });
 	$('#palette-btn').addEventListener('click', openPalette);
 
+	// ------------------------------------------------------------------ 英文版
+	//
+	// 英文版是 src/content/blog-en/<slug>.md，只存翻译出来的标题、摘要、正文。
+	// 日期栏目标签封面都跟着中文原文走，所以这里没有第二套 frontmatter 表单。
+	const en = {
+		state: $('#en-state'), title: $('#en-title'), description: $('#en-description'),
+		body: $('#en-body'), publish: $('#en-publish'), words: $('#en-words'), location: $('#en-location'),
+		count: $('#en-count'), translateBtn: $('#en-translate'), deleteBtn: $('#en-delete'),
+		openDevBtn: $('#en-open-dev'),
+		// 当前这篇的英文版快照。slug 用来判断 loadEn 回来时是不是还停在同一篇。
+		slug: '', loaded: false, exists: false, stale: false,
+		sourceHash: '', translatedAt: '', model: '', dirty: false, busy: false,
+		claude: null,
+	};
+
+	function enCountWords(text) {
+		return (String(text).match(/[A-Za-z0-9]+(?:['-][A-Za-z0-9]+)*/g) || []).length;
+	}
+
+	function renderEn() {
+		const box = en.state;
+		box.className = 'en-state';
+		if (en.busy) {
+			box.innerHTML = '<b>翻译中…</b><span>长文章要一两分钟，这期间可以先去写别的。</span>';
+		} else if (!en.exists && !en.body.value.trim()) {
+			box.innerHTML = '<b>还没有英文版</b><span>点「用 claude 翻译」生成一版，再自己改。</span>';
+		} else if (en.stale) {
+			box.className = 'en-state is-warn';
+			box.innerHTML = '<b>译文过期</b><span>中文原文在这版译文之后改过。重新翻一次，或者手动补上改动。</span>';
+		} else if (en.publish.checked) {
+			box.className = 'en-state is-ok';
+			box.innerHTML = `<b>已发布</b><span>/en/blog/${escapeHtml(en.slug)}/${en.translatedAt ? ` · 译于 ${escapeHtml(en.translatedAt)}` : ''}</span>`;
+		} else {
+			box.innerHTML = `<b>草稿</b><span>勾上「发布英文版」才会生成页面${en.translatedAt ? ` · 译于 ${escapeHtml(en.translatedAt)}` : ''}</span>`;
+		}
+		en.translateBtn.textContent = en.exists || en.body.value.trim() ? '重新翻译' : '用 claude 翻译';
+		en.translateBtn.disabled = en.busy || en.claude === false;
+		en.translateBtn.title = en.claude === false
+			? '这台机器上没找到 claude 命令行。装好之后重开写作台，或者把路径写进 CLAUDE_BIN。'
+			: '';
+		en.deleteBtn.disabled = !en.exists || en.busy;
+		en.openDevBtn.disabled = !en.exists || en.publish.checked === false;
+		en.words.textContent = en.body.value.trim() ? `${enCountWords(en.body.value)} words` : '';
+		const badge = en.exists ? (en.stale ? '过期' : en.publish.checked ? '已发布' : '草稿') : '';
+		en.count.textContent = badge;
+	}
+
+	/** 打开某篇 / 切到英文标签时拉一次。同一篇只拉一次，除非 force。 */
+	async function loadEn({ force = false } = {}) {
+		if (!state.current || !isPost()) return;
+		if (!force && en.loaded && en.slug === state.slug) return renderEn();
+		const slug = state.slug;
+		try {
+			if (en.claude === null) {
+				const probe = await api('/api/en/probe').catch(() => ({ claude: null }));
+				en.claude = probe.claude || false;
+			}
+			const data = await api(`/api/en/${encodeURIComponent(slug)}`);
+			if (state.slug !== slug) return; // 期间又切走了
+			en.slug = slug;
+			en.loaded = true;
+			en.exists = data.exists;
+			en.stale = Boolean(data.stale);
+			en.sourceHash = data.sourceHash || '';
+			en.translatedAt = data.frontmatter?.translatedAt || '';
+			en.model = data.frontmatter?.model || '';
+			en.title.value = data.frontmatter?.title || '';
+			en.description.value = data.frontmatter?.description || '';
+			en.location.value = data.frontmatter?.location || '';
+			en.body.value = data.body || '';
+			en.publish.checked = data.exists ? data.frontmatter?.draft === false : false;
+			en.dirty = false;
+			renderEn();
+		} catch (error) {
+			toast(error.message, true);
+		}
+	}
+
+	/** 换文章时把面板清空，免得上一篇的译文一闪而过。 */
+	function resetEn() {
+		en.loaded = false;
+		en.slug = state.slug;
+		en.exists = false;
+		en.stale = false;
+		en.dirty = false;
+		en.busy = false;
+		en.title.value = '';
+		en.description.value = '';
+		en.location.value = '';
+		en.body.value = '';
+		en.publish.checked = false;
+		en.count.textContent = '';
+		renderEn();
+	}
+
+	async function saveEn({ quiet = false } = {}) {
+		if (!en.dirty || !en.slug) return;
+		if (!en.title.value.trim() || !en.body.value.trim()) return; // 空的就先不写盘
+		try {
+			const data = await api(`/api/en/${encodeURIComponent(en.slug)}`, {
+				method: 'PUT',
+				body: JSON.stringify({
+					title: en.title.value.trim(),
+					description: en.description.value.trim(),
+					location: en.location.value.trim(),
+					body: en.body.value,
+					draft: !en.publish.checked,
+					sourceHash: en.sourceHash,
+					translatedAt: en.translatedAt || undefined,
+					model: en.model || undefined,
+				}),
+			});
+			en.dirty = false;
+			en.exists = true;
+			en.translatedAt = data.frontmatter.translatedAt || en.translatedAt;
+			// 存的是照这版原文译的稿，所以存完就不再算过期。
+			en.stale = Boolean(en.sourceHash) && en.sourceHash !== data.sourceHash;
+			renderEn();
+			if (!quiet) toast('英文版已保存');
+			loadPosts();
+		} catch (error) {
+			toast(`英文版没存上：${error.message}`, true);
+		}
+	}
+	const scheduleEnSave = debounce(() => saveEn({ quiet: true }), 900);
+	/** 中文原文存完之后重新问一次「译文过没过期」，别跟打字抢。 */
+	const scheduleEnRecheck = debounce(() => {
+		if (en.loaded && !en.dirty && !en.busy) loadEn({ force: true });
+	}, 1500);
+
+	function markEnDirty() {
+		en.dirty = true;
+		renderEn();
+		scheduleEnSave();
+	}
+	for (const field of [en.title, en.description, en.location, en.body]) field.addEventListener('input', markEnDirty);
+	en.publish.addEventListener('change', () => {
+		if (!en.body.value.trim()) {
+			en.publish.checked = false;
+			toast('先有译文再谈发布。', true);
+			return;
+		}
+		markEnDirty();
+	});
+
+	en.translateBtn.addEventListener('click', async () => {
+		if (!state.current || !isPost()) return;
+		if (en.body.value.trim() && !confirm('重新翻译会覆盖现在这版英文正文，继续？')) return;
+		if (state.dirty) await saveNow({ quiet: true }).catch(() => {});
+		const slug = state.slug;
+		en.busy = true;
+		renderEn();
+		try {
+			const data = await api(`/api/en/${encodeURIComponent(slug)}/translate`, { method: 'POST', body: JSON.stringify({}) });
+			if (state.slug !== slug) return;
+			en.title.value = data.title || '';
+			en.description.value = data.description || '';
+			en.location.value = data.location || '';
+			en.body.value = data.body || '';
+			en.sourceHash = data.sourceHash || '';
+			en.translatedAt = '';
+			en.model = 'claude';
+			en.stale = false;
+			en.busy = false;
+			en.dirty = true;
+			renderEn();
+			await saveEn({ quiet: true });
+			toast(`翻好了，用了 ${data.seconds} 秒。存成草稿了，看一遍再勾发布。`);
+		} catch (error) {
+			en.busy = false;
+			renderEn();
+			toast(error.data?.hint ? `${error.message}\n${error.data.hint}` : error.message, true);
+		}
+	});
+
+	en.deleteBtn.addEventListener('click', async () => {
+		if (!en.exists) return;
+		if (!confirm(`丢掉 ${en.slug} 的英文版？文件会移到 tools/blog-editor/.trash/blog-en/。`)) return;
+		try {
+			await api(`/api/en/${encodeURIComponent(en.slug)}`, { method: 'DELETE' });
+			resetEn();
+			toast('英文版已移到 .trash');
+			loadPosts();
+		} catch (error) {
+			toast(error.message, true);
+		}
+	});
+
+	en.openDevBtn.addEventListener('click', () => {
+		window.open(`${state.meta.astroDevUrl}/en/blog/${encodeURIComponent(en.slug)}/`, '_blank');
+	});
+
+	// ------------------------------------------------------------------ 导出长图
+	const exp = {
+		dialog: $('#export-dialog'), frame: $('#export-frame'), scroll: $('#export-scroll'),
+		size: $('#export-size'), note: $('#export-note'),
+		footer: $('#export-footer'), scale2x: $('#export-2x'),
+		width: 1080, theme: 'light', limit: 0, height: 0, browser: null,
+	};
+
+	function exportUrl() {
+		const params = new URLSearchParams({
+			w: String(exp.width),
+			theme: exp.theme,
+			footer: exp.footer.checked ? '1' : '0',
+			limit: String(exp.limit),
+		});
+		return `/export/${encodeURIComponent(state.slug)}?${params}`;
+	}
+
+	/** 按真实宽度渲染，再用 transform 缩到预览框里量高度。 */
+	function refreshExportPreview() {
+		const boxWidth = exp.scroll.clientWidth || 520;
+		const scale = boxWidth / exp.width;
+		exp.frame.style.width = `${exp.width}px`;
+		exp.frame.style.transform = `scale(${scale})`;
+		exp.frame.src = exportUrl();
+		exp.size.textContent = '量尺寸中…';
+		exp.frame.onload = () => {
+			const doc = exp.frame.contentDocument;
+			// 量 .sheet 而不是 documentElement：内容比视口短时 scrollHeight 会被视口高度托底，
+			// 「开头四段」那种小卡片就会量成一整屏高，底下拖一大片空白。
+			const sheet = doc?.querySelector('.sheet');
+			const h = Math.ceil(
+				(sheet ? sheet.getBoundingClientRect().height : 0) || doc?.documentElement?.scrollHeight || 0,
+			);
+			exp.height = h;
+			exp.frame.style.height = `${h}px`;
+			exp.scroll.style.height = '100%';
+			exp.frame.parentElement.style.height = `${Math.ceil(h * scale)}px`;
+			exp.size.textContent = `${exp.width} × ${h}`;
+			const tall = h > 12000;
+			const mp = ((exp.width * h * (exp.scale2x.checked ? 4 : 1)) / 1e6).toFixed(1);
+			exp.note.className = 'export-note' + (tall ? ' is-warn' : '');
+			exp.note.textContent = tall
+                ? `这张图有 ${h}px 高，微信可能会压得很厉害。可以改成「开头四段」，让大家点进博客看全文。`
+                : `约 ${mp} 百万像素。微信朋友圈会重新压缩，长图点开后可以放大看。`;
+		};
+	}
+	const scheduleExportPreview = debounce(refreshExportPreview, 120);
+
+	async function openExport() {
+		if (!state.current) { toast('先打开一篇文章', true); return; }
+		if (!isPost()) { toast('长图目前只支持文章', true); return; }
+		if (!state.meta?.features?.includes('export')) {
+			toast('写作台的后台还是旧版本，没有长图接口。把终端里的 npm run editor 停掉重开一次（或者重新双击 写作台.command）。', true);
+			return;
+		}
+		if (state.dirty) await saveNow({ quiet: true }).catch(() => {});
+		if (exp.browser === null) {
+			const probe = await api('/api/export/probe').catch(() => ({ browser: null }));
+			exp.browser = probe.browser || false;
+		}
+		$('#export-save').disabled = !exp.browser;
+		$('#export-save').title = exp.browser ? '' : '没找到 Chrome / Edge / Brave，只能先打开再自己截图';
+		exp.dialog.showModal();
+		requestAnimationFrame(refreshExportPreview);
+	}
+
+	$('#export-btn').addEventListener('click', openExport);
+	$('#export-cancel').addEventListener('click', () => exp.dialog.close());
+	$('#export-open').addEventListener('click', () => window.open(exportUrl(), '_blank'));
+	$('#export-width').addEventListener('click', (e) => {
+		const b = e.target.closest('[data-w]'); if (!b) return;
+		exp.width = Number(b.dataset.w);
+		$$('#export-width button').forEach((x) => x.setAttribute('aria-pressed', x === b ? 'true' : 'false'));
+		scheduleExportPreview();
+	});
+	$('#export-theme').addEventListener('click', (e) => {
+		const b = e.target.closest('[data-theme]'); if (!b) return;
+		exp.theme = b.dataset.theme;
+		$$('#export-theme button').forEach((x) => x.setAttribute('aria-pressed', x === b ? 'true' : 'false'));
+		scheduleExportPreview();
+	});
+	$('#export-limit').addEventListener('click', (e) => {
+		const b = e.target.closest('[data-limit]'); if (!b) return;
+		exp.limit = Number(b.dataset.limit);
+		$$('#export-limit button').forEach((x) => x.setAttribute('aria-pressed', x === b ? 'true' : 'false'));
+		scheduleExportPreview();
+	});
+	exp.footer.addEventListener('change', scheduleExportPreview);
+	exp.scale2x.addEventListener('change', scheduleExportPreview);
+
+	$('#export-save').addEventListener('click', async () => {
+		const btn = $('#export-save');
+		btn.disabled = true; btn.textContent = '出图中…';
+		try {
+			const res = await fetch('/api/export/png', {
+				method: 'POST',
+				headers: { 'content-type': 'application/json' },
+				body: JSON.stringify({
+					slug: state.slug, width: exp.width, height: exp.height,
+					scale: exp.scale2x.checked ? 2 : 1, theme: exp.theme,
+					footer: exp.footer.checked, limit: exp.limit,
+				}),
+			});
+			if (!res.ok) {
+				const data = await res.json().catch(() => ({}));
+				throw new Error(data.hint || data.error || '导出失败');
+			}
+			const blob = await res.blob();
+			const a = document.createElement('a');
+			a.href = URL.createObjectURL(blob);
+			a.download = `${state.slug}.png`;
+			a.click();
+			setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+			toast(`已下载 ${exp.width}×${exp.height} 的长图`);
+		} catch (e) {
+			toast(e.message, true);
+		} finally {
+			btn.disabled = false; btn.textContent = '下载 PNG';
+		}
+	});
+
 	// ------------------------------------------------------------------ git 同步
 	const gitEl = {
 		bar: $('#git-bar'), counts: $('#git-counts'), dialog: $('#git-dialog'),
@@ -2557,7 +3177,9 @@
 			if (state.current) {
 				const slug = state.slug;
 				state.dirty = false;
-				if (isSeason()) await openSeason(slug); else await openPost(slug, { silent: true });
+				if (isSeason()) await openSeason(slug);
+				else if (isAbout()) await openAbout();
+				else await openPost(slug, { silent: true });
 			}
 			toast('已拉取远程的改动');
 		} catch (e) {
@@ -2630,7 +3252,9 @@
 		$$('[data-panel]').forEach((b) => b.setAttribute('aria-selected', b.dataset.panel === name ? 'true' : 'false'));
 		$('#panel-meta').hidden = name !== 'meta';
 		$('#panel-images').hidden = name !== 'images';
+		$('#panel-en').hidden = name !== 'en';
 		$('#panel-check').hidden = name !== 'check';
+		if (name === 'en') loadEn();
 	}
 	$('.panel__tabs').addEventListener('click', (e) => { const b = e.target.closest('[data-panel]'); if (b) switchPanel(b.dataset.panel); });
 
@@ -2708,7 +3332,10 @@
 		} catch (err) { toast(err.message, true); }
 	});
 
-	$('#new-post-btn').addEventListener('click', () => (state.filter === 'seasons' ? openSeasonDialog() : openNewDialog()));
+	$('#new-post-btn').addEventListener('click', () => {
+		if (state.filter === 'about') { toast('关于页只有一篇，新建不了。点左边那条就能改。', true); return; }
+		state.filter === 'seasons' ? openSeasonDialog() : openNewDialog();
+	});
 	$('#empty-new-btn').addEventListener('click', openNewDialog);
 	$('#new-cancel').addEventListener('click', () => el.newDialog.close());
 	el.newForm.addEventListener('submit', async (e) => {
@@ -2732,6 +3359,7 @@
 
 	$('#delete-post-btn').addEventListener('click', async () => {
 		if (!state.current) return;
+		if (isAbout()) { toast('关于页是站点自带的一页，删不掉。清空正文就行。', true); return; }
 		const what = isSeason() ? '这篇季笺' : `「${state.fm.title}」和它的图片目录`;
 		if (!confirm(`把${what}移到 tools/blog-editor/.trash？`)) return;
 		try {
@@ -2741,7 +3369,7 @@
 			el.empty.hidden = false; el.editor.hidden = true; el.preview.hidden = true;
 			el.editorPane.classList.remove('is-split');
 			el.editorFoot.hidden = true; el.openDev.hidden = true; el.editor.value = '';
-			el.seasonForm.hidden = true; el.form.hidden = false;
+			el.seasonForm.hidden = true; el.aboutForm.hidden = true; el.form.hidden = false;
 			updateTitle(); setStatus('');
 			location.hash = '';
 			LS.set('lastOpen', null);
@@ -2769,9 +3397,14 @@
 		const hash = decodeURIComponent(location.hash.slice(1));
 		const last = LS.get('lastOpen', null);
 		const target = hash
-			? (hash.startsWith('season/') ? { kind: 'season', slug: hash.slice(7) } : { kind: 'post', slug: hash })
+			? hash === 'about'
+				? { kind: 'about' }
+				: hash.startsWith('season/')
+					? { kind: 'season', slug: hash.slice(7) }
+					: { kind: 'post', slug: hash }
 			: last;
-		if (target?.kind === 'season' && state.seasons.some((x) => x.slug === target.slug)) await openSeason(target.slug);
+		if (target?.kind === 'about') await openAbout();
+		else if (target?.kind === 'season' && state.seasons.some((x) => x.slug === target.slug)) await openSeason(target.slug);
 		else if (target?.slug && state.posts.some((p) => p.slug === target.slug)) await openPost(target.slug, { silent: true });
 	}
 	boot().catch((e) => toast(`启动失败：${e.message}`, true));

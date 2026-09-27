@@ -30,3 +30,6 @@ src/content/.obsidian/
 
 # local blog editor trash
 tools/blog-editor/.trash/
+
+# Claude 传回来的文件落脚处，不进仓库
+Claude outputs/

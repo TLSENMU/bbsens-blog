@@ -6,9 +6,11 @@ import {
 	getAdjacentPosts,
 	getPublishedPosts,
 	getPostSlug,
+	getPostUrl,
 	getPublicPosts,
 	getRelatedPosts,
 } from '../../lib/posts';
+import { getEnTitleMap, getEnUrl } from '../../lib/en';
 
 export async function getStaticPaths() {
 	const posts = await getPublishedPosts();
@@ -24,8 +26,20 @@ const { Content, headings } = await render(post);
 const { prev, next } = post.data.unlisted ? { prev: undefined, next: undefined } : getAdjacentPosts(posts, post);
 const related = post.data.unlisted ? [] : getRelatedPosts(posts, post);
 const readingTime = estimateReadingTime(post.body);
+const link = (item: typeof post) => ({ url: getPostUrl(item), title: item.data.title });
+const enTitles = await getEnTitleMap();
+const slug = getPostSlug(post);
+const altUrl = enTitles.has(slug) ? getEnUrl(slug) : undefined;
 ---
 
-<BlogPostLayout post={post} headings={headings} readingTime={readingTime} prev={prev} next={next} related={related}>
+<BlogPostLayout
+	post={post}
+	headings={headings}
+	readingTime={readingTime}
+	prev={prev && link(prev)}
+	next={next && link(next)}
+	related={related.map(link)}
+	altUrl={altUrl}
+>
 	<Content />
 </BlogPostLayout>

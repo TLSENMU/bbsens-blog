@@ -17,10 +17,12 @@
 
 import http from 'node:http';
 import { promises as fs } from 'node:fs';
-import { existsSync } from 'node:fs';
+import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { spawn, execFile } from 'node:child_process';
+import os from 'node:os';
+import { createHash } from 'node:crypto';
 
 // ---------------------------------------------------------------------------
 // 路径
@@ -32,6 +34,8 @@ const CONTENT_DIR = path.join(ROOT, 'src', 'content', 'blog');
 const SEASONS_DIR = path.join(ROOT, 'src', 'content', 'seasons');
 const ASSETS_DIR = path.join(ROOT, 'public', 'assets', 'posts');
 const PUBLIC_DIR = path.join(ROOT, 'public');
+const EN_DIR = path.join(ROOT, 'src', 'content', 'blog-en');
+const ABOUT_FILE = path.join(ROOT, 'src', 'content', 'about', 'about.md');
 const TRASH_DIR = path.join(here, '.trash');
 const UI_FILE = path.join(here, 'index.html');
 
@@ -170,6 +174,9 @@ const FIELD_ORDER = [
 /** 季笺（src/content/seasons）用另一套字段。 */
 const SEASON_FIELD_ORDER = ['title', 'season', 'year', 'description', 'cover', 'coverAlt', 'draft', 'publishDate'];
 const SEASON_NAMES = ['春', '夏', '秋', '冬'];
+
+/** 关于页（src/content/about/about.md）。就这一篇，没有列表也没有 slug。 */
+const ABOUT_FIELD_ORDER = ['title', 'kicker', 'description', 'updatedDate'];
 
 const CATEGORIES = ['journey', 'food', 'people', 'thoughts'];
 const CATEGORY_LABELS = { journey: '在路上', food: '食', people: '物与人', thoughts: '思绪' };
@@ -394,8 +401,20 @@ async function listPosts() {
 		const source = await fs.readFile(file, 'utf8');
 		const { data, body } = splitFrontmatter(source);
 		const stat = await fs.stat(file);
+		const slug = slugFromFile(file);
+		const en = await readEn(slug);
 		posts.push({
-			slug: slugFromFile(file),
+			slug,
+			// 左栏那个 EN 角标：none / draft / published / stale
+			en: !en
+				? 'none'
+				: en.frontmatter.sourceHash &&
+					  en.frontmatter.sourceHash !==
+							sourceFingerprint({ title: data.title, description: data.description, body })
+					? 'stale'
+					: en.frontmatter.draft
+						? 'draft'
+						: 'published',
 			file: path.relative(ROOT, file),
 			title: data.title ?? '(无标题)',
 			description: data.description ?? '',
@@ -626,6 +645,275 @@ function escapeHtml(text) {
 }
 
 // ---------------------------------------------------------------------------
+// 导出长图：拼一页专门排版的 HTML，再用系统里已经装着的浏览器截一张图
+// ---------------------------------------------------------------------------
+
+/** 常见的 Chrome / Edge / Brave / Chromium 位置，找到哪个用哪个。不装任何新依赖。 */
+const BROWSER_CANDIDATES = [
+	'/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
+	'/Applications/Google Chrome Canary.app/Contents/MacOS/Google Chrome Canary',
+	'/Applications/Microsoft Edge.app/Contents/MacOS/Microsoft Edge',
+	'/Applications/Brave Browser.app/Contents/MacOS/Brave Browser',
+	'/Applications/Chromium.app/Contents/MacOS/Chromium',
+	process.env.CHROME_PATH,
+	'/usr/bin/google-chrome',
+	'/usr/bin/chromium',
+	'/usr/bin/chromium-browser',
+	'/snap/bin/chromium',
+].filter(Boolean);
+
+/** Playwright 装的 chromium 版本号会变，扫一下目录。 */
+function findBundledChromium() {
+	const base = '/opt/pw-browsers';
+	if (!existsSync(base)) return null;
+	try {
+		for (const entry of readdirSyncSafe(base)) {
+			for (const rel of ['chrome-linux/chrome', 'chrome-linux/headless_shell', 'chrome-mac/Chromium.app/Contents/MacOS/Chromium']) {
+				const candidate = path.join(base, entry, rel);
+				if (existsSync(candidate)) return candidate;
+			}
+		}
+	} catch {}
+	return null;
+}
+
+function readdirSyncSafe(dir) {
+	try {
+		return readdirSync(dir);
+	} catch {
+		return [];
+	}
+}
+
+function findBrowser() {
+	for (const candidate of BROWSER_CANDIDATES) if (existsSync(candidate)) return candidate;
+	return findBundledChromium();
+}
+
+function escapeAttr(text) {
+	return escapeHtml(String(text ?? ''));
+}
+
+/** 按空行把正文切块，用来做「只要开头」。 */
+function firstBlocks(body, count) {
+	if (!count) return body;
+	const blocks = body.split(/\n[ \t]*\n/).filter((b) => b.trim());
+	// count 数的是「正文段落」。标题、引用、图片、分隔线照样跟着走，但不占名额：
+	// 否则文章开头一个 ## 小标题就吃掉四分之一的篇幅，卡片上只剩一句话。
+	const isProse = (b) => !/^(#{1,6}\s|>|!\[|<|-{3,}\s*$|\*{3,}\s*$)/.test(b.trim());
+	const out = [];
+	let taken = 0;
+	for (const b of blocks) {
+		if (taken >= count) break;
+		if (isProse(b)) taken += 1;
+		out.push(b);
+	}
+	// 别让卡片以一个孤零零的小标题或一张图收尾。
+	while (out.length && !isProse(out[out.length - 1])) out.pop();
+	return out.join('\n\n');
+}
+
+/**
+ * 长图的一页 HTML。宽度是写死的像素，所有尺寸按宽度比例换算，
+ * 这样 750 / 1080 / 1242 出来的观感一致。
+ */
+async function buildExportPage({ post, width, theme, footer, limit }) {
+	const fm = post.frontmatter;
+	const body = firstBlocks(post.body, limit);
+	// 懒加载会让「视口越高、加载的图越多、页面越长」，量出来的高度和截图时对不上。
+	// 长图要的是一次性全部渲染，所以这里强制 eager。
+	const html = (await renderPreview(body)).replace(/\sloading=["']lazy["']/g, ' loading="eager"');
+	const truncated = limit && body.length < post.body.length;
+	const k = width / 1080; // 以 1080 为基准缩放
+	const px = (n) => `${Math.round(n * k)}px`;
+	const dark = theme === 'dark';
+	const date = fm.publishDate
+		? (() => { const [y, m, d] = fm.publishDate.split('-'); return `${y} 年 ${Number(m)} 月 ${Number(d)} 日`; })()
+		: '';
+	const label = CATEGORY_LABELS[fm.category] ?? '';
+	const site = siteConfigCache();
+
+	return `<!doctype html>
+<html lang="zh-CN" data-theme="${dark ? 'dark' : 'light'}">
+<head>
+<meta charset="utf-8">
+<title>${escapeAttr(fm.title)}</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;600;700&family=Noto+Sans+SC:wght@400;500&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&display=swap">
+<link rel="stylesheet" href="/site.css">
+<link rel="stylesheet" href="/katex.css">
+<style>
+	html, body { margin: 0; padding: 0; background: var(--color-bg); }
+	body { width: ${width}px; }
+	.sheet {
+		width: ${width}px;
+		padding: ${px(96)} ${px(80)} ${px(72)};
+		background: var(--color-bg);
+		color: var(--color-text);
+		font-family: var(--font-serif-cn);
+		box-sizing: border-box;
+	}
+	.sheet__kicker {
+		display: flex; align-items: center; gap: ${px(20)};
+		color: var(--color-muted);
+		font-family: var(--font-sans);
+		font-size: ${px(26)};
+		letter-spacing: 0.1em;
+	}
+	.sheet__kicker::before {
+		content: ""; width: ${px(54)}; height: ${px(4)}; border-radius: 999px;
+		background: var(--category-color, var(--color-accent));
+	}
+	.sheet h1 {
+		margin: ${px(34)} 0 ${px(26)};
+		font-size: ${px(74)};
+		font-weight: 600;
+		line-height: 1.28;
+		letter-spacing: 0.01em;
+	}
+	.sheet__meta { color: var(--color-faint); font-family: var(--font-sans); font-size: ${px(26)}; }
+	.sheet__rule { height: 1px; margin: ${px(46)} 0 ${px(52)}; background: var(--color-line); }
+	.sheet .prose {
+		max-width: none;
+		font-size: ${px(36)};
+		line-height: 2.05;
+	}
+	.sheet .prose p { margin: ${px(38)} 0; }
+	.sheet .prose h2 { font-size: ${px(50)}; margin: ${px(70)} 0 ${px(30)}; }
+	.sheet .prose h3 { font-size: ${px(42)}; margin: ${px(56)} 0 ${px(26)}; }
+	.sheet .prose img { border-radius: ${px(10)}; }
+	.sheet .prose figure { margin: ${px(52)} 0; }
+	.sheet .prose figcaption { font-size: ${px(24)}; margin-top: ${px(18)}; }
+	.sheet .prose blockquote { padding-left: ${px(30)}; border-left-width: ${px(5)}; }
+	.sheet .prose :where(h2, h3) .heading-anchor { display: none; }
+
+	/* 站点上那些「出血」元素靠 margin-left:50% + transform 撑出正文宽度，
+	   放进固定宽度的长图里会溢出被裁掉。这里一律收回内容宽度。 */
+	.sheet .prose figure.image-wide,
+	.sheet .prose figure.image-full,
+	.sheet .prose figure.image-pair,
+	.sheet .prose .recipe-card,
+	.sheet .prose .recipe-card-grid,
+	.sheet .prose .pepper-table-card {
+		width: 100%;
+		margin-left: 0;
+		transform: none;
+	}
+	.sheet .prose figure.image-pair { gap: ${px(20)}; }
+	.sheet .prose figure.image-pair img { max-height: ${px(760)}; }
+
+	/* 站点用 vh 限制图片高度，但长图的「视口」就是整张图的高度，
+	   量出来的高度和截图时的高度会对不上，底部就被切掉。全部换成按宽度换算的定值。 */
+	.sheet .prose img { max-height: ${px(1500)}; }
+	.sheet .prose figure.image-portrait { width: 68%; }
+	.sheet .prose .recipe-card-grid { grid-template-columns: minmax(0, 1fr); gap: ${px(28)}; }
+
+	/* 菜谱小卡：把里面按 rem 定的字号按长图比例放大 */
+	.sheet .prose .recipe-card { padding: ${px(44)}; border-radius: ${px(12)}; }
+	.sheet .prose .recipe-card__header h3 { font-size: ${px(22)}; }
+	.sheet .prose .recipe-card__meta { font-size: ${px(26)}; }
+	.sheet .prose .recipe-card__meta div:first-child dd { font-size: ${px(52)}; }
+	.sheet .prose .recipe-card__annotation { font-size: ${px(28)}; max-width: ${px(300)}; padding: ${px(14)} ${px(22)}; }
+	.sheet .prose .recipe-card h4 { font-size: ${px(34)}; margin-bottom: ${px(20)}; }
+	.sheet .prose .recipe-ingredients { font-size: ${px(28)}; gap: ${px(14)}; }
+	.sheet .prose .recipe-ingredients li { padding-bottom: ${px(12)}; grid-template-columns: minmax(${px(190)}, 0.5fr) minmax(0, 1fr); gap: ${px(16)}; }
+	.sheet .prose .recipe-steps { font-size: ${px(30)}; gap: ${px(20)}; }
+	.sheet .prose .recipe-steps li { padding-left: ${px(62)}; line-height: 1.9; }
+	.sheet .prose .recipe-steps li::before { width: ${px(42)}; height: ${px(42)}; font-size: ${px(22)}; top: ${px(8)}; }
+	.sheet .prose .pepper-table-card { padding: ${px(30)}; }
+	.sheet .prose .pepper-table-card table { min-width: 0; font-size: ${px(24)}; }
+	.sheet .prose .pepper-table-card h3 { font-size: ${px(40)}; }
+	.sheet__more {
+		margin: ${px(46)} 0 0;
+		color: var(--color-muted);
+		font-family: var(--font-sans);
+		font-size: ${px(28)};
+		text-align: center;
+	}
+	.sheet__foot {
+		display: flex; align-items: baseline; justify-content: space-between; gap: ${px(24)};
+		margin-top: ${px(76)};
+		padding-top: ${px(34)};
+		border-top: 1px solid var(--color-line);
+		color: var(--color-muted);
+		font-family: var(--font-sans);
+		font-size: ${px(26)};
+	}
+	.sheet__foot b {
+		font-family: var(--font-serif-en);
+		font-size: ${px(34)};
+		font-weight: 600;
+		color: var(--color-text);
+	}
+	.sheet__foot span { color: var(--color-faint); }
+</style>
+</head>
+<body>
+<article class="sheet" data-category="${escapeAttr(fm.category ?? '')}">
+	<div class="sheet__kicker">${escapeHtml(label)}</div>
+	<h1>${escapeHtml(fm.title ?? '')}</h1>
+	<div class="sheet__meta">${escapeHtml([date, fm.location].filter(Boolean).join(' · '))}</div>
+	<div class="sheet__rule"></div>
+	<div class="prose">${html}</div>
+	${truncated ? '<p class="sheet__more">……全文见博客</p>' : ''}
+	${footer ? `<div class="sheet__foot"><b>${escapeHtml(site.siteTitle)}</b><span>${escapeHtml(site.siteSubtitle)} · ${escapeHtml(site.host)}</span></div>` : ''}
+</article>
+</body>
+</html>`;
+}
+
+let siteConfigMemo = null;
+/** 从 src/config.ts 里捞站名和域名，不用解析 TS。 */
+function siteConfigCache() {
+	if (siteConfigMemo) return siteConfigMemo;
+	let siteTitle = 'From BBS';
+	let siteSubtitle = '此间春秋';
+	let host = '';
+	try {
+		const source = readFileSyncSafe(path.join(ROOT, 'src', 'config.ts'));
+		siteTitle = source.match(/siteTitle:\s*'([^']*)'/)?.[1] ?? siteTitle;
+		siteSubtitle = source.match(/siteSubtitle:\s*'([^']*)'/)?.[1] ?? siteSubtitle;
+		const url = source.match(/siteUrl:\s*'([^']*)'/)?.[1] ?? '';
+		host = url.replace(/^https?:\/\//, '').replace(/\/$/, '');
+	} catch {}
+	siteConfigMemo = { siteTitle, siteSubtitle, host };
+	return siteConfigMemo;
+}
+
+function readFileSyncSafe(file) {
+	try {
+		return readFileSync(file, 'utf8');
+	} catch {
+		return '';
+	}
+}
+
+/** 用无头浏览器把一个本地 URL 截成 PNG。 */
+function screenshot({ url, width, height, scale, out }) {
+	const browser = findBrowser();
+	if (!browser) throw Object.assign(new Error('没找到可用的浏览器'), { status: 501, noBrowser: true });
+	return new Promise((resolve, reject) => {
+		const args = [
+			'--headless=new',
+			'--disable-gpu',
+			'--hide-scrollbars',
+			'--no-sandbox',
+			'--force-color-profile=srgb',
+			`--force-device-scale-factor=${scale}`,
+			`--window-size=${width},${height}`,
+			'--virtual-time-budget=6000',
+			`--screenshot=${out}`,
+			url,
+		];
+		execFile(browser, args, { timeout: 120000 }, (error) => {
+			if (existsSync(out)) resolve(out);
+			else reject(new Error(`截图失败：${error?.message ?? '浏览器没有产出文件'}`));
+		});
+	});
+}
+
+// ---------------------------------------------------------------------------
 // git：只做「看状态 / 拉 / 提交并推送」三件事，全部由你按按钮触发
 // ---------------------------------------------------------------------------
 
@@ -791,6 +1079,286 @@ async function writePost(file, fm, body) {
 }
 
 // ---------------------------------------------------------------------------
+// 关于页：src/content/about/about.md
+//
+// 站点上只有这一篇，所以没有列表、没有 slug、也不能删——接口就两个动作。
+// ---------------------------------------------------------------------------
+
+function normalizeAbout(input) {
+	const fm = {};
+	fm.title = String(input.title ?? '').trim();
+	fm.kicker = String(input.kicker ?? '').trim() || 'About';
+	fm.description = String(input.description ?? '').trim();
+	const updated = toDateString(input.updatedDate);
+	if (updated) fm.updatedDate = updated;
+	const ordered = {};
+	for (const key of ABOUT_FIELD_ORDER) if (fm[key] !== undefined) ordered[key] = fm[key];
+	return ordered;
+}
+
+function validateAbout(fm) {
+	const errors = [];
+	const warnings = [];
+	if (!fm.title) errors.push({ field: 'title', message: '标题不能为空。' });
+	if (!fm.description) {
+		errors.push({ field: 'description', message: '关于页的摘要是必填的（schema 里没设 optional），它会进 <meta description>。' });
+	}
+	if (fm.updatedDate && (!DATE_RE.test(fm.updatedDate) || Number.isNaN(Date.parse(fm.updatedDate)))) {
+		errors.push({ field: 'updatedDate', message: '更新日期格式应为 YYYY-MM-DD。' });
+	}
+	if (!fm.kicker) warnings.push({ field: 'kicker', message: '小标题空着，页面上标题前面那行会是空的。' });
+	return { ok: errors.length === 0, errors, warnings };
+}
+
+async function readAbout() {
+	let source;
+	try {
+		source = await fs.readFile(ABOUT_FILE, 'utf8');
+	} catch {
+		return null;
+	}
+	const stat = await fs.stat(ABOUT_FILE);
+	const { data, body } = splitFrontmatter(source);
+	const known = {};
+	const extra = {};
+	for (const [key, value] of Object.entries(data)) {
+		if (ABOUT_FIELD_ORDER.includes(key)) known[key] = value;
+		else if (!key.startsWith('__')) extra[key] = value;
+	}
+	known.updatedDate = toDateString(known.updatedDate);
+	return {
+		kind: 'about',
+		slug: 'about',
+		file: path.relative(ROOT, ABOUT_FILE),
+		frontmatter: known,
+		extra,
+		body,
+		assets: [],
+		mtimeMs: stat.mtimeMs,
+		yamlError: data.__yamlError ?? null,
+		validation: validateAbout(normalizeAbout(known)),
+	};
+}
+
+// ---------------------------------------------------------------------------
+// 英文版：src/content/blog-en/<slug>.md
+//
+// 这里只存翻译出来的东西——标题、摘要、正文。日期、栏目、标签、封面
+// 一律由同 slug 的中文原文提供（见 src/lib/en.ts），所以中文那边改了
+// 栏目或封面，英文页不会悄悄对不上。
+// ---------------------------------------------------------------------------
+
+const EN_FIELD_ORDER = ['title', 'description', 'location', 'draft', 'sourceHash', 'translatedAt', 'model'];
+
+/**
+ * 中文原文的指纹。只看翻译真正读到的三样东西，所以改标签、改封面
+ * 不会把译文判成过期，改一个字才会。
+ *
+ * src/lib/en.ts 里有一份一模一样的实现，改这里记得改那边。
+ */
+function sourceFingerprint({ title = '', description = '', body = '' }) {
+	const text = [
+		String(title).trim(),
+		String(description ?? '').trim(),
+		String(body).replace(/\r\n/g, '\n').trim(),
+	].join('\n\u0000\n');
+	return createHash('sha256').update(text, 'utf8').digest('hex').slice(0, 16);
+}
+
+function enFile(slug) {
+	return path.join(EN_DIR, `${slug}.md`);
+}
+
+async function readEn(slug) {
+	const file = enFile(slug);
+	let source;
+	try {
+		source = await fs.readFile(file, 'utf8');
+	} catch {
+		return null;
+	}
+	const stat = await fs.stat(file);
+	const { data, body } = splitFrontmatter(source);
+	return {
+		slug,
+		file: path.relative(ROOT, file),
+		frontmatter: {
+			title: data.title ?? '',
+			description: data.description ?? '',
+			location: data.location ?? '',
+			draft: data.draft === undefined ? true : Boolean(data.draft),
+			sourceHash: data.sourceHash ?? '',
+			translatedAt: toDateString(data.translatedAt),
+			model: data.model ?? '',
+		},
+		body,
+		mtimeMs: stat.mtimeMs,
+		yamlError: data.__yamlError ?? null,
+	};
+}
+
+function normalizeEn(input) {
+	const fm = {};
+	fm.title = String(input.title ?? '').trim();
+	const description = String(input.description ?? '').trim();
+	if (description) fm.description = description;
+	const location = String(input.location ?? '').trim();
+	if (location) fm.location = location;
+	fm.draft = Boolean(input.draft);
+	if (input.sourceHash) fm.sourceHash = String(input.sourceHash);
+	if (input.translatedAt) fm.translatedAt = toDateString(input.translatedAt);
+	if (input.model) fm.model = String(input.model);
+	const ordered = {};
+	for (const key of EN_FIELD_ORDER) if (fm[key] !== undefined) ordered[key] = fm[key];
+	return ordered;
+}
+
+async function writeEn(slug, fm, body) {
+	const file = enFile(slug);
+	await fs.mkdir(path.dirname(file), { recursive: true });
+	await fs.writeFile(file, buildMarkdown(fm, body), 'utf8');
+	return (await fs.stat(file)).mtimeMs;
+}
+
+// --------------------------------------------------------------- claude CLI
+
+/**
+ * 本机的 claude 命令行。GUI 双击起的 node 拿到的 PATH 往往很窄，
+ * 所以除了 PATH 之外还把几个常见安装位置挨个试一遍。
+ */
+const CLAUDE_CANDIDATES = [
+	process.env.CLAUDE_BIN,
+	path.join(os.homedir(), '.claude', 'local', 'claude'),
+	path.join(os.homedir(), '.local', 'bin', 'claude'),
+	path.join(os.homedir(), '.bun', 'bin', 'claude'),
+	path.join(os.homedir(), '.npm-global', 'bin', 'claude'),
+	'/opt/homebrew/bin/claude',
+	'/usr/local/bin/claude',
+	'/usr/bin/claude',
+].filter(Boolean);
+
+let claudeCache;
+function findClaude() {
+	if (claudeCache !== undefined) return claudeCache;
+	for (const candidate of CLAUDE_CANDIDATES) {
+		try {
+			if (existsSync(candidate)) return (claudeCache = candidate);
+		} catch {
+			/* 继续找 */
+		}
+	}
+	// PATH 里有就用 PATH 里的，execFile 会自己解析。
+	for (const dir of String(process.env.PATH || '').split(path.delimiter)) {
+		if (!dir) continue;
+		const candidate = path.join(dir, 'claude');
+		try {
+			if (existsSync(candidate)) return (claudeCache = candidate);
+		} catch {
+			/* 继续找 */
+		}
+	}
+	return (claudeCache = null);
+}
+
+const TRANSLATE_SYSTEM = `You are a literary translator. You translate a Chinese personal-blog essay into English.
+
+Rules, in order of importance:
+1. Preserve the Markdown source structure EXACTLY. Same number of blocks, same order, same heading levels, same list markers, same blockquote markers, same blank lines between blocks. Do not merge or split paragraphs. Do not add a title heading.
+2. Raw HTML blocks stay byte-identical in their tags, attributes, class names, ids and nesting. Translate ONLY the human-readable text between tags, and the values of alt=, title= and aria-label=. Never translate a class name or an id, never change an src= or href= path.
+3. Image paths, links, LaTeX math ($...$ and $$...$$), and anything inside backticks stay unchanged.
+4. Proper nouns: use the standard English form for well-known places (贵阳 -> Guiyang). For personal names written in Chinese, use pinyin without tone marks. Keep a name the author already writes in Latin letters exactly as it is.
+5. Voice: this is a personal essay, not a news report. Keep the author's register — unhurried, concrete, a little wry. Do not inflate the prose, do not explain what the Chinese leaves unsaid, do not add a moral at the end of a paragraph. Where a Chinese sentence is a fragment, an English fragment is fine.
+6. No translator's notes, no footnotes, no parentheses explaining Chinese culture.
+
+Output format — output nothing else, no preamble, no code fence:
+<<<TITLE>>>
+(the English title, one line)
+<<<DESCRIPTION>>>
+(the English one-sentence description, one line; the single word NONE if the source has none)
+<<<LOCATION>>>
+(the English form of the place name given to you as LOCATION, one line; the single word NONE if none was given)
+<<<BODY>>>
+(the translated Markdown body)`;
+
+function parseTranslation(text) {
+	const out = String(text ?? '');
+	const title = out.match(/<<<TITLE>>>\s*\n([\s\S]*?)\n\s*<<<DESCRIPTION>>>/);
+	const description = out.match(/<<<DESCRIPTION>>>\s*\n([\s\S]*?)\n\s*<<<(?:LOCATION|BODY)>>>/);
+	const location = out.match(/<<<LOCATION>>>\s*\n([\s\S]*?)\n\s*<<<BODY>>>/);
+	const body = out.match(/<<<BODY>>>\s*\n([\s\S]*)$/);
+	if (!title || !body) {
+		const error = new Error('claude 的输出不是约定的格式，没法拆成标题 / 摘要 / 正文。');
+		error.status = 502;
+		error.raw = out.slice(0, 2000);
+		throw error;
+	}
+	const blank = (value) => {
+		const text = (value ?? '').trim();
+		return text === 'NONE' || text === '(none)' ? '' : text;
+	};
+	return {
+		title: title[1].trim(),
+		description: blank(description?.[1]),
+		location: blank(location?.[1]),
+		body: body[1].replace(/\s+$/, '') + '\n',
+	};
+}
+
+/**
+ * 调本机的 claude 命令行翻一篇。
+ *
+ * - 提示词走 stdin，不进 argv：正文可能上万字，而且不必操心引号。
+ * - cwd 设成临时目录，免得 Claude Code 把这个仓库的 CLAUDE.md / AGENTS.md
+ *   也读进去当上下文——那是给写代码用的，会干扰翻译。
+ * - --restricted 去掉会跑命令的工具，--strict-mcp-config 不加载任何 MCP。
+ */
+function translateWithClaude({ title, description, location, body, model }, { timeout = 900000 } = {}) {
+	const bin = findClaude();
+	if (!bin) {
+		const error = new Error('没找到 claude 命令行。');
+		error.status = 503;
+		error.noClaude = true;
+		throw error;
+	}
+	const argv = [
+		'-p',
+		'--output-format', 'text',
+		'--system-prompt', TRANSLATE_SYSTEM,
+		'--strict-mcp-config',
+		'--no-session-persistence',
+		'--restricted',
+	];
+	if (model) argv.push('--model', String(model));
+
+	const prompt = `TITLE: ${title}\nDESCRIPTION: ${description || '(none)'}\nLOCATION: ${location || '(none)'}\n\n--- BODY STARTS ---\n${body}`;
+
+	return new Promise((resolve, reject) => {
+		const child = execFile(
+			bin,
+			argv,
+			{ cwd: os.tmpdir(), timeout, maxBuffer: 64 * 1024 * 1024, env: { ...process.env, CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC: '1' } },
+			(error, stdout, stderr) => {
+				if (error) {
+					const detail = String(stderr || stdout || error.message).trim().slice(0, 600);
+					const wrapped = new Error(
+						error.killed ? `翻译超时了（${Math.round(timeout / 1000)} 秒）。文章很长的话可以先拆开译。` : `claude 退出异常：${detail}`,
+					);
+					wrapped.status = 502;
+					return reject(wrapped);
+				}
+				try {
+					resolve(parseTranslation(stdout));
+				} catch (parseError) {
+					reject(parseError);
+				}
+			},
+		);
+		child.stdin.on('error', () => {});
+		child.stdin.end(prompt);
+	});
+}
+
+// ---------------------------------------------------------------------------
 // 路由
 // ---------------------------------------------------------------------------
 
@@ -813,6 +1381,9 @@ async function handleApi(req, res, url) {
 			today: todayString(),
 			quickDefaults: { category: 'thoughts', tags: ['思绪'], language: 'zh' },
 			seasonNames: SEASON_NAMES,
+			// 界面是从磁盘现读的，服务是进程启动时载入的。两边版本对不上时
+			// （改完代码忘了重启），界面会拿这个列表判断，好过让人对着 404 发呆。
+			features: ['export', 'git', 'seasons', 'en', 'about'],
 		});
 	}
 
@@ -1137,6 +1708,183 @@ async function handleApi(req, res, url) {
 		return json(res, 200, { frontmatter: fm, yaml: dumpYaml(fm), validation: validateSeason(fm, { slug: payload.slug }) });
 	}
 
+	// ------------------------------------------------------------------ 关于页
+	// 只有读和写：站点上就这一篇，既不能新建也不能删。
+	if (resource === 'about' && rest.length === 0) {
+		if (method === 'GET') {
+			const about = await readAbout();
+			return about
+				? json(res, 200, about)
+				: json(res, 404, { error: '找不到 src/content/about/about.md' });
+		}
+
+		if (method === 'PUT') {
+			const payload = await readJson(req);
+			if (!existsSync(ABOUT_FILE)) return json(res, 404, { error: '找不到 src/content/about/about.md' });
+			if (payload.mtimeMs && !payload.overwrite) {
+				const stat = await fs.stat(ABOUT_FILE);
+				if (Math.abs(stat.mtimeMs - Number(payload.mtimeMs)) > 1) {
+					return json(res, 409, { code: 'stale', error: '这个文件在磁盘上被改过了。', mtimeMs: stat.mtimeMs });
+				}
+			}
+			const fm = normalizeAbout({ ...payload.frontmatter });
+			const validation = validateAbout(fm);
+			if (!validation.ok && !payload.force) {
+				return json(res, 422, { error: validation.errors[0].message, validation });
+			}
+			// 保留用户自己加的字段，别在保存时悄悄吃掉。
+			const merged = { ...fm, ...(payload.extra ?? {}) };
+			const ordered = {};
+			for (const key of ABOUT_FIELD_ORDER) if (merged[key] !== undefined) ordered[key] = merged[key];
+			for (const [key, value] of Object.entries(merged)) if (!(key in ordered)) ordered[key] = value;
+			await writePost(ABOUT_FILE, ordered, payload.body ?? '');
+			return json(res, 200, await readAbout());
+		}
+
+		return json(res, 405, { error: '不支持的方法' });
+	}
+
+	// POST /api/validate-about
+	if (resource === 'validate-about' && method === 'POST') {
+		const payload = await readJson(req);
+		const fm = normalizeAbout({ ...payload.frontmatter });
+		return json(res, 200, { frontmatter: fm, yaml: dumpYaml(fm), validation: validateAbout(fm) });
+	}
+
+	// ------------------------------------------------------------------ 英文版
+	// GET /api/en/probe —— 本机有没有 claude 命令行
+	if (resource === 'en' && rest[0] === 'probe' && method === 'GET') {
+		const bin = findClaude();
+		return json(res, 200, { claude: bin, name: bin ? path.basename(bin) : null });
+	}
+
+	if (resource === 'en' && rest.length >= 1 && rest[0] !== 'probe') {
+		const slug = decodeURIComponent(rest[0]);
+		if (!SLUG_RE.test(slug)) return json(res, 400, { error: '非法 slug' });
+		const post = await readPost(slug);
+		if (!post) return json(res, 404, { error: '中文原文不存在' });
+		const hash = sourceFingerprint({
+			title: post.frontmatter.title,
+			description: post.frontmatter.description,
+			body: post.body,
+		});
+
+		// GET /api/en/:slug —— 读英文版
+		if (rest.length === 1 && method === 'GET') {
+			const en = await readEn(slug);
+			return json(res, 200, {
+				slug,
+				exists: Boolean(en),
+				sourceHash: hash,
+				stale: Boolean(en && en.frontmatter.sourceHash && en.frontmatter.sourceHash !== hash),
+				source: { title: post.frontmatter.title, description: post.frontmatter.description ?? '' },
+				...(en ?? { frontmatter: { title: '', description: '', draft: true }, body: '' }),
+			});
+		}
+
+		// PUT /api/en/:slug —— 存英文版
+		if (rest.length === 1 && method === 'PUT') {
+			const payload = await readJson(req);
+			const title = String(payload.title ?? '').trim();
+			if (!title) return json(res, 400, { error: '英文标题不能为空。' });
+			const body = String(payload.body ?? '');
+			if (!body.trim()) return json(res, 400, { error: '英文正文是空的。' });
+			// 存的时候把当前原文的指纹记下来：之后原文改了就知道译文过期了。
+			// 只有正文确实是照这版原文译的才该盖章，所以沿用前端传回来的那个。
+			const fm = normalizeEn({
+				title,
+				description: payload.description,
+				location: payload.location,
+				draft: payload.draft !== false,
+				sourceHash: payload.sourceHash || hash,
+				translatedAt: payload.translatedAt || todayString(),
+				model: payload.model,
+			});
+			const mtimeMs = await writeEn(slug, fm, body.endsWith('\n') ? body : `${body}\n`);
+			return json(res, 200, { ok: true, slug, mtimeMs, frontmatter: fm, sourceHash: hash });
+		}
+
+		// DELETE /api/en/:slug —— 丢掉英文版（进 .trash，和删文章一样）
+		if (rest.length === 1 && method === 'DELETE') {
+			const file = enFile(slug);
+			if (!existsSync(file)) return json(res, 404, { error: '还没有英文版' });
+			await fs.mkdir(path.join(TRASH_DIR, 'blog-en'), { recursive: true });
+			const target = path.join(TRASH_DIR, 'blog-en', `${slug}-${Date.now()}.md`);
+			await fs.rename(file, target);
+			return json(res, 200, { ok: true, trashed: path.relative(ROOT, target) });
+		}
+
+		// POST /api/en/:slug/translate —— 调本机 claude 翻一遍，只回结果不落盘
+		if (rest[1] === 'translate' && method === 'POST') {
+			const payload = await readJson(req).catch(() => ({}));
+			try {
+				const started = Date.now();
+				const result = await translateWithClaude({
+					title: post.frontmatter.title,
+					description: post.frontmatter.description ?? '',
+					location: post.frontmatter.location ?? '',
+					body: post.body,
+					model: payload.model,
+				});
+				return json(res, 200, { ...result, sourceHash: hash, seconds: Math.round((Date.now() - started) / 1000) });
+			} catch (error) {
+				return json(res, error.status ?? 500, {
+					error: error.message,
+					noClaude: Boolean(error.noClaude),
+					raw: error.raw,
+					hint: error.noClaude
+						? '写作台是调你这台机器上的 claude 命令行翻译的。装好之后（或者把路径写进 CLAUDE_BIN 环境变量）重开一次写作台。'
+						: undefined,
+				});
+			}
+		}
+
+		return json(res, 405, { error: '不支持的方法' });
+	}
+
+	// GET /api/export/probe —— 有没有可用的浏览器
+	if (resource === 'export' && rest[0] === 'probe' && method === 'GET') {
+		const browser = findBrowser();
+		return json(res, 200, { browser, name: browser ? path.basename(browser) : null });
+	}
+
+	// POST /api/export/png —— 截一张长图回来
+	if (resource === 'export' && rest[0] === 'png' && method === 'POST') {
+		const payload = await readJson(req);
+		const slug = String(payload.slug ?? '');
+		const post = await readPost(slug);
+		if (!post) return json(res, 404, { error: '文章不存在' });
+		const width = Math.min(2000, Math.max(320, Number(payload.width) || 1080));
+		const height = Math.min(30000, Math.max(200, Math.round(Number(payload.height) || 2000)));
+		const scale = Math.min(3, Math.max(1, Number(payload.scale) || 1));
+		const params = new URLSearchParams({
+			w: String(width),
+			theme: payload.theme === 'dark' ? 'dark' : 'light',
+			footer: payload.footer === false ? '0' : '1',
+			limit: String(Number(payload.limit) || 0),
+		});
+		const url = `http://127.0.0.1:${PORT}/export/${encodeURIComponent(slug)}?${params}`;
+		const out = path.join(os.tmpdir(), `frombbs-${Date.now()}.png`);
+		try {
+			await screenshot({ url, width, height, scale, out });
+			const data = await fs.readFile(out);
+			await fs.unlink(out).catch(() => {});
+			res.writeHead(200, {
+				'content-type': 'image/png',
+				'content-length': data.length,
+				'content-disposition': `attachment; filename="${encodeURIComponent(slug)}.png"`,
+				'cache-control': 'no-store',
+			});
+			return res.end(data);
+		} catch (error) {
+			return json(res, error.status ?? 500, {
+				error: error.message,
+				noBrowser: Boolean(error.noBrowser),
+				hint: error.noBrowser ? '没找到 Chrome / Edge / Brave。可以先「在新标签里打开」，再用系统截图。' : undefined,
+			});
+		}
+	}
+
 	// /api/git —— 同步。三个动作都要你在界面上按一下，服务自己不会动。
 	if (resource === 'git') {
 		if (method === 'GET' && rest.length === 0) {
@@ -1219,6 +1967,25 @@ const server = http.createServer(async (req, res) => {
 		if (url.pathname.startsWith('/api/')) return await handleApi(req, res, url);
 
 		if (url.pathname === '/' || url.pathname === '/index.html') return await serveFile(res, UI_FILE);
+
+		// 长图页面：编辑器里的预览和无头截图看到的是同一个 URL
+		if (url.pathname.startsWith('/export/')) {
+			const slug = decodeURIComponent(url.pathname.slice('/export/'.length));
+			const post = await readPost(slug);
+			if (!post) {
+				res.writeHead(404, { 'content-type': 'text/plain; charset=utf-8' });
+				return res.end('文章不存在');
+			}
+			const page = await buildExportPage({
+				post,
+				width: Math.min(2000, Math.max(320, Number(url.searchParams.get('w')) || 1080)),
+				theme: url.searchParams.get('theme') === 'dark' ? 'dark' : 'light',
+				footer: url.searchParams.get('footer') !== '0',
+				limit: Number(url.searchParams.get('limit')) || 0,
+			});
+			res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-store' });
+			return res.end(page);
+		}
 
 		// 站点样式，供预览使用
 		if (url.pathname === '/site.css') return await serveFile(res, path.join(ROOT, 'src', 'styles', 'global.css'));
