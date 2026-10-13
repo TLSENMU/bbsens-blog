@@ -1,0 +1,5 @@
+# Windows 的 cmd 按 CRLF 读批处理；LF 结尾的 .bat 在找 goto 标签时会出怪毛病。
+*.bat     text eol=crlf
+# macOS 双击的 .command 和 shell 脚本必须是 LF，不然 bash 会把 \r 当成命令的一部分。
+*.command text eol=lf
+*.sh      text eol=lf

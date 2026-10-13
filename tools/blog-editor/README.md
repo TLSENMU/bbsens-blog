@@ -160,6 +160,15 @@ npm run editor
 
 没有任何一步是自动的：服务自己不会 commit，更不会 push。仓库没有 remote 或者不是 git 仓库时，这条同步栏根本不显示。
 
+**Windows 上**多几件事：
+
+- 装 [Git for Windows](https://git-scm.com/download/win)，一路默认。它自带 Git Credential Manager：**第一次推送时会弹一个 GitHub 登录窗口**，点授权就行，之后记住了，再也不问。
+- `写作台.bat` 开头有一句 `chcp 65001`，并且仓库的 `.gitattributes` 让它永远以 CRLF 检出——中文 Windows 默认是 GBK 代码页，UTF-8 的中文批处理不这么处理会乱码甚至把两行粘成一行。
+- `npm run dev` / `npm run build` 在 cmd 里跑不了（`ASTRO_TELEMETRY_DISABLED=1 astro …` 是 POSIX 写法）。想开「在站点里看」就用 `npx astro dev`。写作台自己的分屏预览不受影响。
+- 长图会自动用系统自带的 Edge 截图。
+- 英文翻译要 claude 的**原生安装版**（`%USERPROFILE%\.local\bin\claude.exe`）。npm 全局装出来的 `claude.cmd` 起不来：Windows 上执行 `.cmd` 得经过 cmd.exe，多行的翻译提示词会被它拆坏。
+- 如果同步栏报 `detected dubious ownership`，在终端跑一次 `git config --global --add safe.directory D:/personal_record/bbsens-blog`。
+
 两台同时开着写同一篇仍然会冲突——git 帮不了这个。实际用法是：这台写完推上去，再到那台拉下来接着写。
 
 ## 其它

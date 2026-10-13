@@ -656,6 +656,17 @@ const BROWSER_CANDIDATES = [
 	'/Applications/Brave Browser.app/Contents/MacOS/Brave Browser',
 	'/Applications/Chromium.app/Contents/MacOS/Chromium',
 	process.env.CHROME_PATH,
+	// Windows：Edge 是系统自带的，所以这台机器上几乎总能出图。
+	...(process.platform === 'win32'
+		? [
+				process.env['ProgramFiles(x86)'] && path.join(process.env['ProgramFiles(x86)'], 'Microsoft', 'Edge', 'Application', 'msedge.exe'),
+				process.env.ProgramFiles && path.join(process.env.ProgramFiles, 'Microsoft', 'Edge', 'Application', 'msedge.exe'),
+				process.env.ProgramFiles && path.join(process.env.ProgramFiles, 'Google', 'Chrome', 'Application', 'chrome.exe'),
+				process.env['ProgramFiles(x86)'] && path.join(process.env['ProgramFiles(x86)'], 'Google', 'Chrome', 'Application', 'chrome.exe'),
+				process.env.LOCALAPPDATA && path.join(process.env.LOCALAPPDATA, 'Google', 'Chrome', 'Application', 'chrome.exe'),
+				process.env.ProgramFiles && path.join(process.env.ProgramFiles, 'BraveSoftware', 'Brave-Browser', 'Application', 'brave.exe'),
+			]
+		: []),
 	'/usr/bin/google-chrome',
 	'/usr/bin/chromium',
 	'/usr/bin/chromium-browser',
@@ -1226,8 +1237,10 @@ async function writeEn(slug, fm, body) {
  * 本机的 claude 命令行。GUI 双击起的 node 拿到的 PATH 往往很窄，
  * 所以除了 PATH 之外还把几个常见安装位置挨个试一遍。
  */
+const EXE = process.platform === 'win32' ? '.exe' : '';
 const CLAUDE_CANDIDATES = [
 	process.env.CLAUDE_BIN,
+	...(process.platform === 'win32' ? [path.join(os.homedir(), '.local', 'bin', 'claude.exe')] : []),
 	path.join(os.homedir(), '.claude', 'local', 'claude'),
 	path.join(os.homedir(), '.local', 'bin', 'claude'),
 	path.join(os.homedir(), '.bun', 'bin', 'claude'),
@@ -1250,7 +1263,7 @@ function findClaude() {
 	// PATH 里有就用 PATH 里的，execFile 会自己解析。
 	for (const dir of String(process.env.PATH || '').split(path.delimiter)) {
 		if (!dir) continue;
-		const candidate = path.join(dir, 'claude');
+		const candidate = path.join(dir, `claude${EXE}`);
 		try {
 			if (existsSync(candidate)) return (claudeCache = candidate);
 		} catch {
