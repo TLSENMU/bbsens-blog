@@ -932,10 +932,31 @@ function screenshot({ url, width, height, scale, out }) {
  * 用 execFile 而不是 shell：提交信息是用户输入，作为独立的 argv 传进去，
  * 不经过任何命令行解析，省掉一整类注入问题。
  */
+/**
+ * git push 的报错是英文的，而且往往只有一句 "could not read Username"。
+ * 绝大多数情况是「这台电脑还没登录过 GitHub」，把它说成人话。
+ */
+function pushHint(error) {
+	const text = String(error?.message ?? '');
+	if (error?.killed) {
+		return '推送等了 90 秒没反应——多半是 GitHub 登录窗口弹出来了但没人点。在仓库文件夹里开一个终端，跑一次 git push，在弹出的窗口里登录。登过一次以后这个按钮就能直接用了。';
+	}
+	if (/could not read (Username|Password)|Authentication failed|terminal prompts disabled|Logon failed|No credentials|credential/i.test(text)) {
+		return '这台电脑还没登录过 GitHub。在仓库文件夹里开一个终端，跑一次 git push，按弹出来的窗口登录。登过一次以后这个按钮就能直接用了。';
+	}
+	if (/\b403\b|Permission to .* denied/i.test(text)) {
+		return '登录的 GitHub 账号没有这个仓库的写权限——可能登成了别的账号。到 Windows「凭据管理器」里删掉 git:https://github.com 那一条，再推一次，换成对的账号登录。';
+	}
+	if (/\[rejected\]|fetch first|non-fast-forward/i.test(text)) {
+		return 'GitHub 上有这台电脑还没有的提交（多半是另一台电脑推的）。先按「拉取」，再推。';
+	}
+	return '';
+}
+
 function git(args, { timeout = 20000 } = {}) {
 	return new Promise((resolve, reject) => {
 		execFile('git', ['-c', 'core.quotepath=false', ...args], { cwd: ROOT, timeout, maxBuffer: 4 * 1024 * 1024 }, (error, stdout, stderr) => {
-			if (error) reject(Object.assign(new Error(String(stderr || stdout || error.message).trim()), { git: true }));
+			if (error) reject(Object.assign(new Error(String(stderr || stdout || error.message).trim()), { git: true, killed: Boolean(error.killed) }));
 			// 只去掉结尾的空白：status --porcelain 的第一列就是空格，trim() 会把第一行的路径削掉一个字。
 			else resolve(String(stdout).replace(/\s+$/, ''));
 		});
@@ -1926,7 +1947,8 @@ async function handleApi(req, res, url) {
 				await git(['push'], { timeout: 90000 });
 				return json(res, 200, { ok: true, pushed: true, ...(await gitStatus()) });
 			} catch (error) {
-				return json(res, 502, { error: `git push 失败：${error.message}` });
+				const hint = pushHint(error);
+				return json(res, 502, { error: hint || `git push 失败：${error.message}`, detail: error.message, hint });
 			}
 		}
 		if (method === 'POST' && rest[0] === 'commit') {
@@ -1945,7 +1967,14 @@ async function handleApi(req, res, url) {
 			try {
 				await git(['push'], { timeout: 90000 });
 			} catch (error) {
-				return json(res, 502, { error: `已经提交到本地，但 push 失败：${error.message}`, committed: true, ...(await gitStatus()) });
+				const hint = pushHint(error);
+				return json(res, 502, {
+					error: `已经提交到本地，但没推上去。${hint || error.message}`,
+					detail: error.message,
+					hint,
+					committed: true,
+					...(await gitStatus()),
+				});
 			}
 			return json(res, 200, { ok: true, pushed: true, ...(await gitStatus()) });
 		}

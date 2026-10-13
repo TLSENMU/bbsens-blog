@@ -2829,6 +2829,11 @@
 		box.className = 'en-state';
 		if (en.busy) {
 			box.innerHTML = '<b>翻译中…</b><span>长文章要一两分钟，这期间可以先去写别的。</span>';
+		} else if (en.claude === false) {
+			box.className = 'en-state is-warn';
+			box.innerHTML = '<b>这台电脑上没有 claude 命令行</b><span>翻译是调本机的 Claude Code（命令行版，和 Claude 桌面 app 是两个东西）。'
+				+ 'Windows 上在 PowerShell 里跑 <code>irm https://claude.ai/install.ps1 | iex</code>，再开一个新终端跑一次 <code>claude</code> 登录，然后关掉写作台重开。'
+				+ '已有的译文照样能手动改、能发布。</span>';
 		} else if (!en.exists && !en.body.value.trim()) {
 			box.innerHTML = '<b>还没有英文版</b><span>点「用 claude 翻译」生成一版，再自己改。</span>';
 		} else if (en.stale) {
